@@ -22,7 +22,7 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:'Rajdhani
 .hdr{position:sticky;top:0;z-index:100;background:var(--bg);border-bottom:1px solid rgba(255,255,255,0.06);padding:54px 20px 12px}
 .hdr-top{display:flex;justify-content:space-between;align-items:center}
 .pname{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;color:var(--rc);text-shadow:0 0 20px var(--rg);letter-spacing:3px}
-.gbtn{background:none;border:1px solid var(--rc);border-radius:50%;width:43px;height:43px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:19px;color:var(--rc);transition:all .3s;opacity:.7}
+.gbtn{background:none;border:none;width:43px;height:43px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px;color:var(--rc);transition:all .3s;opacity:.8}
 .rbadge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.04);border:1px solid var(--rc);border-radius:20px;padding:4px 14px;margin-top:8px}
 .rletter{font-family:'Orbitron',sans-serif;font-size:24px;font-weight:900;color:var(--rc);text-shadow:0 0 15px var(--rg)}
 .rlabel{font-size:13px;color:var(--rc);letter-spacing:2px;text-transform:uppercase}
@@ -129,7 +129,7 @@ const RANKS = [
 ];
 const STATS = ["Vitalité","Force","Intelligence","Endurance"];
 const STAT_ORDER = ["Vitalité","Force","Intelligence","Endurance"];
-const STAT_COLORS = {Vitalité:"#34d399",Force:"#ef4444",Intelligence:"#818cf8",Endurance:"#f59e0b"};
+const STAT_COLORS = {Vitalité:"#ef4444",Force:"#4ade80",Intelligence:"#f59e0b",Endurance:"#22d3ee"};
 
 // Emojis définis via unicode pour éviter les problèmes de parsing
 const E = {
@@ -543,7 +543,10 @@ function App(){
     const ordered=[...sortStat(state.objectives.filter(o=>o.daily&&!o.optional)),...sortStat(state.objectives.filter(o=>o.daily&&o.optional)),...sortStat(state.objectives.filter(o=>o.weekly))];
     return h('div',{class:'modal-ov',onClick:e=>{if(e.target===e.currentTarget){setShowSet(false);setConfirmReset(false);}}},
       h('div',{class:'modal'},
-        h('div',{class:'mtitle'},'⚙ Réglages'),
+        h('div',{style:'display:flex;justify-content:space-between;align-items:center;margin-bottom:20px'},
+          h('div',{class:'mtitle',style:'margin-bottom:0'},'⚙ Réglages'),
+          h('button',{style:'background:none;border:none;color:var(--td);font-size:22px;cursor:pointer;line-height:1;padding:0 4px',onClick:()=>{setShowSet(false);setConfirmReset(false);}},'✕')
+        ),
         h('div',{class:'msec'},
           h('div',{class:'mlbl'},'📝 Corriger les données du jour'),
           h('div',{style:'font-size:11px;color:var(--td);margin-bottom:10px;line-height:1.5'},"Modifie les valeurs si tu t'es trompé. L'XP sera recalculé."),
@@ -588,7 +591,6 @@ function App(){
                 )
               )
         ),
-        h('button',{class:'mbtn mcan',style:'width:100%;margin-top:4px',onClick:()=>{setShowSet(false);setConfirmReset(false);}},'Fermer')
       )
     );
   }
