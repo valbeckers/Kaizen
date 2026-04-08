@@ -490,15 +490,6 @@ function App(){
               xp>0?Math.round(xp):'·')
           );
         }))
-      ),
-      h('div',{class:'card'},
-        h('div',{class:'ctitle'},'Chiffres clés'),
-        h('div',{class:'ksg'},
-          h('div',{class:'ksb'},h('div',{class:'ksv'},state.totalXp.toFixed(0)),h('div',{class:'ksl'},'XP Total')),
-          h('div',{class:'ksb'},h('div',{class:'ksv'},state.streak),h('div',{class:'ksl'},'🔥 Streak')),
-          h('div',{class:'ksb'},h('div',{class:'ksv'},rank.id),h('div',{class:'ksl'},'Rang actuel')),
-          h('div',{class:'ksb'},h('div',{class:'ksv'},nextRank?(nextRank.xpRequired-state.totalXp).toFixed(0):'MAX'),h('div',{class:'ksl'},'XP manquant'))
-        )
       )
     );
   }
