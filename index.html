@@ -30,8 +30,8 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:'Rajdhani
 .xplbl{display:flex;justify-content:space-between;font-size:11px;color:var(--td);margin-bottom:4px;font-family:'Orbitron',sans-serif}
 .xpbar{height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden}
 .xpfill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--ra),var(--rc));box-shadow:0 0 8px var(--rg);transition:width .6s}
-.hstats{display:flex;gap:20px;margin-top:10px}
-.hstat{text-align:center}
+.hstats{display:flex;gap:20px;margin-top:10px;align-items:center}
+.hstat{text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px}
 .hsval{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;color:var(--rc)}
 .hslbl{font-size:10px;color:var(--td);text-transform:uppercase;letter-spacing:1px}
 .nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:430px;max-width:100vw;background:var(--bg);border-top:1px solid rgba(255,255,255,0.06);display:flex;z-index:200}
@@ -150,15 +150,15 @@ const DEFS = [
   {id:"abs",    name:"Abdominaux",    unit:"reps",  xpPer:1,  daily:true, weekly:false,optional:false,stat:"Force",       icon:E.abs,    base:60},
   {id:"squats", name:"Squats",        unit:"reps",  xpPer:2,  daily:true, weekly:false,optional:false,stat:"Force",       icon:E.squats, base:15},
   {id:"water",  name:"Boire de l'eau",unit:"verres",xpPer:5,  daily:true, weekly:false,optional:false,stat:"Vitalité",    icon:E.water,  base:8},
-  {id:"reading",name:"Lecture",       unit:"pages", xpPer:1,  daily:true, weekly:false,optional:false,stat:"Intelligence",icon:E.reading,base:10},
+  {id:"reading",name:"Lecture",       unit:"pages", xpPer:2,  daily:true, weekly:false,optional:false,stat:"Intelligence",icon:E.reading,base:10},
   {id:"run",    name:"Course à pied", unit:"km",    xpPer:50, daily:false,weekly:true, optional:false,stat:"Endurance",   icon:E.run,    base:7},
   {id:"med",    name:"Méditation",    unit:"min",   xpPer:5,  daily:true, weekly:false,optional:true, stat:"Intelligence",icon:E.med,    base:5},
-  {id:"flex",   name:"Souplesse",     unit:"min",   xpPer:5,  daily:true, weekly:false,optional:true, stat:"Force",       icon:E.flex,   base:5},
-  {id:"sleep",  name:"Sommeil",       unit:"h",     xpPer:0,  daily:true, weekly:false,optional:true, stat:"Vitalité",    icon:E.sleep,  base:8,binary:true,binaryXp:50},
+  {id:"flex",   name:"Souplesse",     unit:"min",   xpPer:5,  daily:true, weekly:false,optional:true, stat:"Vitalité",    icon:E.flex,   base:5},
+  {id:"sleep",  name:"Sommeil",       unit:"h",     xpPer:0,  daily:true, weekly:false,optional:true, stat:"Vitalité",    icon:E.sleep,  base:8,binary:true,binaryXp:100},
 ];
 
 const IMPORTED = {
-  totalXp:1202.5,
+  totalXp:1367,
   streak:3,
   lastActiveDay:"2026-04-08",
   streakBonusDay:null,
@@ -168,8 +168,8 @@ const IMPORTED = {
     "2026-04-08":{water:3,push:70,abs:62,sleep:8,squats:35,reading:3,med:6}
   },
   weeklyLog:{"2026-W15":{run:6.92}},
-  stats:{Vitalité:2,Force:4,Intelligence:0,Endurance:3},
-  statXp:{Vitalité:245,Force:532,Intelligence:79.5,Endurance:346}
+  stats:{Vitalité:3,Force:4,Intelligence:0,Endurance:3},
+  statXp:{Vitalité:420,Force:507,Intelligence:94,Endurance:346}
 };
 
 const getRank  = xp => { for(let i=RANKS.length-1;i>=0;i--)if(xp>=RANKS[i].xpRequired)return RANKS[i];return RANKS[0]; };
@@ -204,10 +204,12 @@ function emptyState(){
 
 function migrate(saved){
   const P={push:{icon:E.push,stat:"Force",xpPer:1},abs:{icon:E.abs,stat:"Force",xpPer:1},squats:{icon:E.squats,stat:"Force",xpPer:2},
-    water:{icon:E.water,stat:"Vitalité",xpPer:5},reading:{icon:E.reading,stat:"Intelligence",xpPer:1},
-    run:{icon:E.run,stat:"Endurance",xpPer:50},med:{icon:E.med,stat:"Intelligence",xpPer:5},flex:{icon:E.flex,stat:"Force",xpPer:5}};
+    water:{icon:E.water,stat:"Vitalité",xpPer:5},reading:{icon:E.reading,stat:"Intelligence",xpPer:2},
+    run:{icon:E.run,stat:"Endurance",xpPer:50},med:{icon:E.med,stat:"Intelligence",xpPer:5},flex:{icon:E.flex,stat:"Vitalité",xpPer:5}};
   let objs=saved.objectives.map(o=>P[o.id]?{...o,...P[o.id]}:o);
   if(!objs.find(o=>o.id==="sleep"))objs=[...objs,DEFS.find(o=>o.id==="sleep")];
+  // Force mise à jour binaryXp du sommeil
+  objs=objs.map(o=>o.id==="sleep"?{...o,binaryXp:100}:o);
   const stats={...(saved.stats||{})};
   delete stats["Agilit\u00e9"]; // supprime Agilité
   if(stats.Vitalité===undefined)stats.Vitalité=0;
@@ -321,7 +323,11 @@ function App(){
           if(el){el.value='';}
         }},'+XP')
       ),
-      h('div',{style:'font-size:10px;color:var(--td);margin-top:4px;font-family:Orbitron,sans-serif'},obj.xpPer+' xp/'+obj.unit+' \u00b7 '+obj.stat)
+      h('div',{style:'font-size:10px;color:var(--td);margin-top:4px;font-family:Orbitron,sans-serif'},
+        obj.binary
+          ? (obj.binaryXp||50)+' xp si \u2265 '+t+' '+obj.unit+' \u00b7 '+obj.stat
+          : obj.xpPer+' xp/'+obj.unit+' \u00b7 '+obj.stat
+      )
     );
   }
 
@@ -354,10 +360,24 @@ function App(){
     return h('div',{class:'tab'},
       missedDays>=2&&h('div',{class:'warn'},'⚠️ Pénalité : -'+(missedDays*10)+' XP ('+missedDays+' jours manqués)'),
       missedDays===1&&h('div',{class:'warn'},'⚡ Attention ! Encore un jour sans activité = pénalité XP.'),
-      h('div',{class:'card',style:'text-align:center;padding:20px'},
-        h('div',{class:'txplbl'},"XP aujourd'hui"),
-        h('div',{class:'txp'},todayXp.toFixed(0)),
-        h('div',{style:'font-size:12px;color:var(--td);margin-top:4px'},'XP total : ',h('span',{style:'color:var(--rc);font-family:Orbitron,sans-serif'},state.totalXp.toFixed(0)))
+      nextRank&&h('div',{class:'card'},
+        h('div',{style:'display:flex;justify-content:space-between;align-items:center;margin-bottom:10px'},
+          h('div',null,
+            h('div',{style:'font-size:11px;color:var(--td);letter-spacing:2px;text-transform:uppercase;font-family:Orbitron,sans-serif;margin-bottom:4px'},'Prochain rang'),
+            h('div',{style:'font-family:Orbitron,sans-serif;font-size:20px;font-weight:900;color:var(--rc)'},nextRank.id+' — '+nextRank.label)
+          ),
+          h('div',{style:'text-align:right'},
+            h('div',{style:'font-family:Orbitron,sans-serif;font-size:22px;font-weight:900;color:var(--rc)'}, (nextRank.xpRequired-state.totalXp).toFixed(0)),
+            h('div',{style:'font-size:10px;color:var(--td);letter-spacing:1px;text-transform:uppercase'},'XP manquants')
+          )
+        ),
+        h('div',{class:'xpbar',style:'height:8px'},
+          h('div',{class:'xpfill',style:'width:'+rankPct+'%'})
+        ),
+        h('div',{style:'display:flex;justify-content:space-between;font-size:10px;color:var(--td);margin-top:5px;font-family:Orbitron,sans-serif'},
+          h('span',null,state.totalXp.toFixed(0)+' XP'),
+          h('span',null,nextRank.xpRequired+' XP')
+        )
       ),
       allReqDone&&h('div',{class:'card',style:'border:1px solid #f59e0b88;background:#f59e0b08;text-align:center'},
         h('div',{style:'font-size:11px;color:#f59e0b;font-family:Orbitron,sans-serif;letter-spacing:2px;margin-bottom:6px'},'🔥 BONUS STREAK'),
@@ -578,6 +598,12 @@ function App(){
         ),
         h('div',{class:'divider'}),
         h('div',{class:'msec'},
+          h('div',{class:'mlbl'},'🔄 Restaurer les données sauvegardées'),
+          h('div',{style:'font-size:11px;color:var(--td);margin-bottom:10px;line-height:1.5'},'Recharge les dernières données intégrées dans le fichier (utile après un reset accidentel).'),
+          h('button',{class:'mbtn',style:'width:100%;background:#16a34a22;border:1px solid #16a34a88;color:#4ade80',onClick:()=>{localStorage.removeItem("sl_v3");setState(buildFromImported());setShowSet(false);}},'↩ Restaurer les données')
+        ),
+        h('div',{class:'divider'}),
+        h('div',{class:'msec'},
           h('div',{class:'mlbl'},'☠ Zone dangereuse'),
           !confirmReset
             ?h('button',{class:'mbtn mdng',style:'width:100%',onClick:()=>setConfirmReset(true)},'Réinitialiser toutes les données')
@@ -640,14 +666,9 @@ function App(){
           h('div',null,h('div',{class:'pname'},'VAL'),h('div',{class:'rbadge'},h('span',{class:'rletter'},rank.id),h('span',{class:'rlabel'},rank.label))),
           h('button',{class:'gbtn',onClick:()=>setShowSet(true)},'⚙')
         ),
-        h('div',{class:'xpwrap'},
-          h('div',{class:'xplbl'},h('span',null,'XP'),h('span',null,nextRank?xpInRank.toFixed(0)+' / '+xpToNext.toFixed(0):'MAÎTRE')),
-          h('div',{class:'xpbar'},h('div',{class:'xpfill',style:'width:'+rankPct+'%'}))
-        ),
         h('div',{class:'hstats'},
           h('div',{class:'hstat'},h('div',{class:'hsval'},'🔥 '+state.streak),h('div',{class:'hslbl'},'Streak')),
-          h('div',{class:'hstat'},h('div',{class:'hsval'},todayXp.toFixed(0)),h('div',{class:'hslbl'},'XP jour')),
-          h('div',{class:'hstat'},h('div',{class:'hsval'},state.totalXp.toFixed(0)),h('div',{class:'hslbl'},'XP total'))
+          h('div',{class:'hstat'},h('div',{class:'hsval'},todayXp.toFixed(0)),h('div',{class:'hslbl'},"XP aujourd'hui"))
         )
       ),
       tab==='home'&&h(Home,null),
