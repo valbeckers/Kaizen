@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -93,29 +92,28 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:'Rajdhani
 .rulabel{font-family:'Orbitron',sans-serif;font-size:20px;letter-spacing:6px;color:var(--rc);margin-top:8px;text-transform:uppercase}
 .rudis{margin-top:40px;background:rgba(255,255,255,0.05);border:1px solid var(--rc);border-radius:8px;padding:12px 32px;color:var(--rc);font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:3px;cursor:pointer;text-transform:uppercase}
 .divider{height:1px;background:linear-gradient(90deg,transparent,var(--rc),transparent);margin:8px 0 16px;opacity:.3}
-.hstats{display:flex;gap:0;margin-top:10px;align-items:stretch}
-.hstat{text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;flex:1}
-.hsval{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;color:var(--rc)}
-.hslbl{font-size:10px;color:var(--td);text-transform:uppercase;letter-spacing:1px}
-.sqcard{background:linear-gradient(135deg,rgba(192,132,252,0.08),rgba(168,85,247,0.04));border:1px solid #a855f744;border-radius:10px;padding:12px;margin-bottom:8px}
+.sqcard{background:linear-gradient(135deg,rgba(239,68,68,0.08),rgba(220,38,38,0.04));border:1px solid #ef444444;border-radius:10px;padding:12px;margin-bottom:8px}
 .sqcard.expired{opacity:.4;filter:grayscale(1)}
 .sqbar{height:4px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;margin:6px 0}
-.sqbarfill{height:100%;border-radius:2px;background:linear-gradient(90deg,#7c3aed,#c084fc);transition:width .4s}
+.sqbarfill{height:100%;border-radius:2px;background:linear-gradient(90deg,#991b1b,#ef4444);transition:width .4s}
+.sq-urgent{animation:urgentPulse 1s ease-in-out infinite}
+@keyframes urgentPulse{0%,100%{box-shadow:0 0 0 0 #ef444444}50%{box-shadow:0 0 0 6px #ef444400}}
 </style>
 </head>
 <body>
 <div id="app"><div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:Orbitron,sans-serif;color:#9ca3af;gap:16px"><div style="font-size:48px">&#x2694;</div><div style="font-size:12px;letter-spacing:4px">CHARGEMENT...</div></div></div>
 <script type="module">
 import { h, render, Fragment } from 'https://esm.sh/preact@10.19.3';
-import { useState, useEffect } from 'https://esm.sh/preact@10.19.3/hooks';
+import { useState, useEffect, useRef } from 'https://esm.sh/preact@10.19.3/hooks';
 
+// Rangs avec progression x2
 const RANKS = [
   {id:"E",label:"Eveille",   color:"#9ca3af",glow:"#9ca3af55",bg:"#0a0a0f",accent:"#6b7280",xpRequired:0},
   {id:"D",label:"Aventurier",color:"#22d3ee",glow:"#22d3ee55",bg:"#000d12",accent:"#06b6d4",xpRequired:3000},
   {id:"C",label:"Combattant",color:"#4ade80",glow:"#4ade8055",bg:"#000d06",accent:"#22c55e",xpRequired:9000},
   {id:"B",label:"Chasseur",  color:"#f59e0b",glow:"#f59e0b55",bg:"#0d0800",accent:"#d97706",xpRequired:21000},
   {id:"A",label:"Expert",    color:"#f87171",glow:"#f87171aa",bg:"#0d0004",accent:"#ef4444",xpRequired:45000},
-  {id:"S",label:"Maitre",    color:"#c084fc",glow:"#c084fcaa",bg:"#0a0014",accent:"#a855f7",xpRequired:90000},
+  {id:"S",label:"Maitre",    color:"#c084fc",glow:"#c084fcaa",bg:"#0a0014",accent:"#a855f7",xpRequired:93000},
 ];
 
 const STATS = ["Vitalite","Force","Esprit","Endurance","Discipline"];
@@ -131,42 +129,78 @@ const E = {
 };
 
 const DEFS = [
-  {id:"push",   name:"Pompes",         unit:"reps",  xpPer:1,  daily:true, weekly:false,optional:false,stat:"Force",     icon:E.push,   base:30},
-  {id:"abs",    name:"Abdominaux",     unit:"reps",  xpPer:1,  daily:true, weekly:false,optional:false,stat:"Force",     icon:E.abs,    base:60},
-  {id:"squats", name:"Squats",         unit:"reps",  xpPer:2,  daily:true, weekly:false,optional:false,stat:"Force",     icon:E.squats, base:15},
-  {id:"water",  name:"Hydratation",    unit:"verres",xpPer:5,  daily:true, weekly:false,optional:false,stat:"Vitalite",  icon:E.water,  base:8},
-  {id:"reading",name:"Lecture",        unit:"pages", xpPer:5,  daily:true, weekly:false,optional:false,stat:"Esprit",    icon:E.reading,base:10},
-  {id:"run",    name:"Course \u00e0 pied",unit:"km", xpPer:25, daily:false,weekly:true, optional:false,stat:"Endurance", icon:E.run,    base:7},
-  {id:"med",    name:"M\u00e9ditation",unit:"min",   xpPer:5,  daily:true, weekly:false,optional:true, stat:"Esprit",    icon:E.med,    base:5},
-  {id:"flex",   name:"Souplesse",      unit:"min",   xpPer:5,  daily:true, weekly:false,optional:true, stat:"Vitalite",  icon:E.flex,   base:5},
-  {id:"sleep",  name:"Sommeil",        unit:"h",     xpPer:0,  daily:true, weekly:false,optional:true, stat:"Vitalite",  icon:E.sleep,  base:8,binary:true,binaryXp:100},
+  {id:"push",   name:"Pompes",      unit:"reps",  xpPer:1,  daily:true, weekly:false,optional:false,stat:"Force",    icon:E.push,   base:30},
+  {id:"abs",    name:"Abdominaux",  unit:"reps",  xpPer:1,  daily:true, weekly:false,optional:false,stat:"Force",    icon:E.abs,    base:60},
+  {id:"squats", name:"Squats",      unit:"reps",  xpPer:1,  daily:true, weekly:false,optional:false,stat:"Force",    icon:E.squats, base:15},
+  {id:"water",  name:"Hydratation", unit:"verres",xpPer:5,  daily:true, weekly:false,optional:false,stat:"Vitalite", icon:E.water,  base:8},
+  {id:"reading",name:"Lecture",     unit:"pages", xpPer:5,  daily:true, weekly:false,optional:false,stat:"Esprit",   icon:E.reading,base:10},
+  {id:"run",    name:"Course",      unit:"km",    xpPer:25, daily:false,weekly:true, optional:false,stat:"Endurance",icon:E.run,    base:7},
+  {id:"med",    name:"M\u00e9ditation",unit:"min",xpPer:5,  daily:true, weekly:false,optional:true, stat:"Esprit",   icon:E.med,    base:5},
+  {id:"flex",   name:"Souplesse",   unit:"min",   xpPer:5,  daily:true, weekly:false,optional:true, stat:"Vitalite", icon:E.flex,   base:5},
+  {id:"sleep",  name:"Sommeil",     unit:"h",     xpPer:0,  daily:true, weekly:false,optional:true, stat:"Vitalite", icon:E.sleep,  base:8,binary:true,binaryXp:50},
 ];
 
-const SP_TEMPLATES = [
-  {id:"sp_dips",  name:"Dips",                unit:"reps",     target:50,  xp:300,stat:"Force",    days:7,  icon:"\uD83D\uDCAA",desc:"50 dips en 7 jours"},
-  {id:"sp_pull",  name:"Tractions",           unit:"reps",     target:30,  xp:300,stat:"Force",    days:7,  icon:"\uD83C\uDFCB\uFE0F",desc:"30 tractions en 7 jours"},
-  {id:"sp_lunge", name:"Fentes march\u00e9es",unit:"pas",      target:200, xp:200,stat:"Force",    days:3,  icon:"\uD83E\uDDB5",desc:"200 pas de fentes en 3 jours"},
-  {id:"sp_plank", name:"Gainage",             unit:"min",      target:5,   xp:150,stat:"Force",    days:3,  icon:"\uD83D\uDCAA",desc:"5 min de planche cumul\u00e9es"},
-  {id:"sp_jump",  name:"Corde \u00e0 sauter", unit:"min",      target:20,  xp:250,stat:"Endurance",days:3,  icon:"\uD83E\uDE62",desc:"20 min non-stop"},
-  {id:"sp_sprint",name:"Sprints",             unit:"s\u00e9ries",target:10,xp:300,stat:"Endurance",days:3,  icon:"\u26A1",desc:"10 x 100m sprint/r\u00e9cup"},
-  {id:"sp_10km",  name:"10km d'une traite",   unit:"km",       target:10,  xp:500,stat:"Endurance",days:14, icon:E.run,desc:"Cours 10km sans t'arr\u00eater"},
-  {id:"sp_pod",   name:"Podcast",             unit:"\u00e9p.",  target:1,   xp:100,stat:"Esprit",   days:3,  icon:"\uD83C\uDF99\uFE0F",desc:"1 podcast complet"},
-  {id:"sp_100p",  name:"100 pages",           unit:"pages",    target:100, xp:400,stat:"Esprit",   days:7,  icon:E.reading,desc:"Lis 100 pages en 7 jours"},
-  {id:"sp_nosg",  name:"Sans sucre",          unit:"jours",    target:7,   xp:350,stat:"Vitalite", days:7,  icon:"\uD83E\uDD57",desc:"7 jours sans junk food"},
-  {id:"sp_slp7",  name:"Sommeil parfait",     unit:"nuits",    target:7,   xp:400,stat:"Vitalite", days:7,  icon:E.sleep,desc:"7 nuits de 8h cons\u00e9cutives"},
-];
+// 20 quêtes spéciales - 5 par stat - 1/4 chance par stat = 1/20 par quête
+const SP = {
+  Force:[
+    {id:"sp_dips",   name:"Dips",              icon:"\uD83D\uDCAA",unit:"reps",  target:50,  xp:300,days:7, desc:"50 dips en 7 jours"},
+    {id:"sp_pull",   name:"Tractions",          icon:"\uD83C\uDFCB\uFE0F",unit:"reps",target:30,xp:300,days:7,desc:"30 tractions en 7 jours"},
+    {id:"sp_lunge",  name:"Fentes march\u00e9es",icon:"\uD83E\uDDB5",unit:"pas", target:200, xp:200,days:3, desc:"200 pas de fentes en 3 jours"},
+    {id:"sp_plank",  name:"Gainage",            icon:"\uD83D\uDCAA",unit:"min",  target:10,  xp:150,days:3, desc:"10 min cumul\u00e9es en 3 jours"},
+    {id:"sp_200push",name:"200 pompes",         icon:E.push,        unit:"reps", target:200, xp:350,days:5, desc:"200 pompes en une s\u00e9ance"},
+  ],
+  Esprit:[
+    {id:"sp_pod",    name:"Podcast",            icon:"\uD83C\uDF99\uFE0F",unit:"\u00e9p.",target:1,xp:100,days:3,desc:"1 podcast complet en 3 jours"},
+    {id:"sp_50p",    name:"50 pages",           icon:E.reading,     unit:"pages",target:50,  xp:250,days:3, desc:"50 pages en une journ\u00e9e"},
+    {id:"sp_med30",  name:"M\u00e9ditation 30min",icon:E.med,       unit:"min",  target:30,  xp:200,days:5, desc:"30 min en une s\u00e9ance"},
+    {id:"sp_learn",  name:"Apprentissage",      icon:"\uD83E\uDDE0",unit:"s\u00e9ances",target:3,xp:200,days:5,desc:"3 s\u00e9ances d'apprentissage"},
+    {id:"sp_write",  name:"Journaling",         icon:"\u270D\uFE0F",unit:"mots", target:500, xp:150,days:3, desc:"500 mots \u00e9crits en 3 jours"},
+  ],
+  Endurance:[
+    {id:"sp_jump",   name:"Corde \u00e0 sauter",icon:"\uD83E\uDE62",unit:"min",  target:20,  xp:250,days:3, desc:"20 min non-stop"},
+    {id:"sp_sprint", name:"Sprints",            icon:"\u26A1",       unit:"s\u00e9ries",target:10,xp:300,days:3,desc:"10 x 100m sprint/r\u00e9cup"},
+    {id:"sp_5km",    name:"5km d'une traite",   icon:E.run,         unit:"km",   target:5,   xp:300,days:7, desc:"5km sans s'arr\u00eater"},
+    {id:"sp_5sess",  name:"5 s\u00e9ances cardio",icon:"\uD83D\uDD25",unit:"s\u00e9ances",target:5,xp:350,days:7,desc:"5 s\u00e9ances cardio en 7 jours"},
+    {id:"sp_30cardio",name:"30 min cardio",     icon:"\uD83E\uDE96",unit:"min",  target:30,  xp:300,days:5, desc:"30 min cardio non-stop"},
+  ],
+  Vitalite:[
+    {id:"sp_nosg",   name:"Sans sucre",         icon:"\uD83E\uDD57",unit:"jours",target:5,   xp:300,days:5, desc:"5 jours sans junk food"},
+    {id:"sp_flex30", name:"Souplesse 30min",    icon:E.flex,        unit:"min",  target:30,  xp:150,days:3, desc:"30 min de souplesse en une s\u00e9ance"},
+    {id:"sp_sleep22",name:"Coucher t\u00f4t",   icon:E.sleep,       unit:"nuits",target:3,   xp:200,days:5, desc:"Dormir avant 22h30 \u2014 3 nuits"},
+    {id:"sp_fasting",name:"Je\u00fbne 16h",     icon:"\u23F3",       unit:"fois", target:3,   xp:300,days:7, desc:"Je\u00fbne 16h \u2014 3 fois en 7 jours"},
+    {id:"sp_fruits", name:"5 fruits/l\u00e9gumes",icon:"\uD83E\uDD57",unit:"jours",target:4, xp:250,days:5, desc:"5 fruits/l\u00e9gumes/jour \u2014 4 jours"},
+  ],
+};
+
+// Probabilités : 1/4 par stat, 1/20 par quête
+function pickRandomSp(usedIds){
+  const stats=["Force","Esprit","Endurance","Vitalite"];
+  const stat=stats[Math.floor(Math.random()*4)];
+  const avail=SP[stat].filter(t=>!usedIds.includes(t.id));
+  if(avail.length===0){
+    // fallback : autre stat
+    const others=stats.filter(s=>s!==stat);
+    for(const s of others){
+      const a=SP[s].filter(t=>!usedIds.includes(t.id));
+      if(a.length>0)return {...a[Math.floor(Math.random()*a.length)],stat:s};
+    }
+    return null;
+  }
+  return {...avail[Math.floor(Math.random()*avail.length)],stat};
+}
 
 const IMPORTED = {
-  totalXp:2516.5, streak:3, lastActiveDay:"2026-04-08",
-  streakBonusDay:"2026-04-08", weeklyBonusWk:"2026-W15",
+  totalXp:2510.5, streak:3, lastActiveDay:"2026-04-09",
+  streakBonusDay:"2026-04-09", weeklyBonusWk:"2026-W15",
   dailyLog:{
     "2026-04-06":{water:8,push:36,abs:72,sleep:8},
     "2026-04-07":{water:8,push:36,abs:72,squats:15,reading:11,flex:5,sleep:8,med:6},
-    "2026-04-08":{water:11,push:100,abs:115,squats:35,reading:46,sleep:8,med:6,flex:20}
+    "2026-04-08":{water:11,push:100,abs:115,squats:35,reading:48,sleep:8,med:6,flex:20},
+    "2026-04-09":{water:2,sleep:8,push:41,abs:64,squats:16}
   },
   weeklyLog:{"2026-W15":{run:10}},
   stats:{Vitalite:4,Force:5,Esprit:3,Endurance:2,Discipline:4},
-  statXp:{Vitalite:605,Force:631.5,Esprit:442.5,Endurance:287.5,Discipline:550},
+  statXp:{Vitalite:515,Force:700.5,Esprit:457.5,Endurance:287.5,Discipline:550},
   specialQuests:[]
 };
 
@@ -182,7 +216,7 @@ const getLvl    = xp => { let l=0;while(xp>=totForLvl(l+1))l++;return l; };
 
 function calcXp(obj,total,ri){
   if(total<=0)return 0;
-  if(obj.binary){const t=getTarget(obj.base,ri);return total>=t?(obj.binaryXp||100):0;}
+  if(obj.binary){const t=getTarget(obj.base,ri);return total>=t?(obj.binaryXp||50):0;}
   const t=getTarget(obj.base,ri);
   if(total<=t)return total*obj.xpPer;
   return t*obj.xpPer+(total-t)*obj.xpPer*1.5;
@@ -200,25 +234,17 @@ function emptyState(){
 }
 
 function migrate(saved){
-  const P={
-    push:{icon:E.push,stat:"Force",xpPer:1},abs:{icon:E.abs,stat:"Force",xpPer:1},
-    squats:{icon:E.squats,stat:"Force",xpPer:2},water:{icon:E.water,stat:"Vitalite",xpPer:5},
+  const P={push:{icon:E.push,stat:"Force",xpPer:1},abs:{icon:E.abs,stat:"Force",xpPer:1},
+    squats:{icon:E.squats,stat:"Force",xpPer:1},water:{icon:E.water,stat:"Vitalite",xpPer:5},
     reading:{icon:E.reading,stat:"Esprit",xpPer:5},run:{icon:E.run,stat:"Endurance",xpPer:25},
-    med:{icon:E.med,stat:"Esprit",xpPer:5},flex:{icon:E.flex,stat:"Vitalite",xpPer:5}
-  };
+    med:{icon:E.med,stat:"Esprit",xpPer:5},flex:{icon:E.flex,stat:"Vitalite",xpPer:5}};
   let objs=(saved.objectives||DEFS).map(o=>P[o.id]?{...o,...P[o.id]}:o);
   if(!objs.find(o=>o.id==="sleep"))objs=[...objs,DEFS.find(o=>o.id==="sleep")];
-  objs=objs.map(o=>o.id==="sleep"?{...o,binaryXp:100}:o);
-  // Migrate stat keys
-  const fixStat = k => {
-    const map={"Vitalité":"Vitalite","Éveillé":"Eveille","Maître":"Maitre","Intelligence":"Esprit"};
-    return map[k]||k;
-  };
-  const stats={};
-  Object.entries(saved.stats||{}).forEach(([k,v])=>{const nk=fixStat(k);if(STATS.includes(nk))stats[nk]=v;});
+  objs=objs.map(o=>o.id==="sleep"?{...o,binaryXp:50}:o);
+  const fixK=k=>({"\u0056italit\u00e9":"Vitalite","Vitalit\u00e9":"Vitalite","Intelligence":"Esprit","Agilit\u00e9":"_del","Agility":"_del"}[k]||k);
+  const stats={};Object.entries(saved.stats||{}).forEach(([k,v])=>{const nk=fixK(k);if(STATS.includes(nk))stats[nk]=v;});
   STATS.forEach(s=>{if(stats[s]===undefined)stats[s]=0;});
-  const statXp={};
-  Object.entries(saved.statXp||{}).forEach(([k,v])=>{const nk=fixStat(k);if(STATS.includes(nk))statXp[nk]=v;});
+  const statXp={};Object.entries(saved.statXp||{}).forEach(([k,v])=>{const nk=fixK(k);if(STATS.includes(nk))statXp[nk]=v;});
   STATS.forEach(s=>{if(statXp[s]===undefined)statXp[s]=0;});
   return {...saved,objectives:objs,stats,statXp,specialQuests:saved.specialQuests||[]};
 }
@@ -229,14 +255,13 @@ function App(){
   const [showAdd,setShowAdd]=useState(false);
   const [rankUp,setRankUp]=useState(null);
   const [floats,setFloats]=useState([]);
-  const inputs={};
+  const inputs=useRef({});
   const [newObj,setNewObj]=useState({name:"",unit:"reps",xpPer:1,daily:true,weekly:false,optional:false,stat:"Force",icon:"\u26A1",base:10});
   const [editObj,setEditObj]=useState(null);
   const [showSet,setShowSet]=useState(false);
   const [confirmReset,setConfirmReset]=useState(false);
   const [confirmDelete,setConfirmDelete]=useState(null);
   const [wkOff,setWkOff]=useState(0);
-  const [showSpPicker,setShowSpPicker]=useState(false);
 
   useEffect(()=>{saveState(state);},[state]);
 
@@ -271,13 +296,31 @@ function App(){
   const weeklyBonusGiven=state.weeklyBonusWk===wk;
   const missedDays=(()=>{if(!state.lastActiveDay)return 0;const d=Math.round((new Date(today)-new Date(state.lastActiveDay))/86400000);return d>1?d:0;})();
 
+  // Quête spéciale active
+  const now=Date.now();
+  const sqs=state.specialQuests||[];
+  const activeSq=sqs.find(q=>!q.completedAt&&now<q.expiresAt)||null;
+  const completedSq=sqs.find(q=>q.completedAt&&(now-q.completedAt)<86400000)||null;
+
+  // Auto-launch quête spéciale si aucune active
+  useEffect(()=>{
+    if(!activeSq&&!completedSq){
+      const used=sqs.map(q=>q.id);
+      const tpl=pickRandomSp(used);
+      if(tpl){
+        const sq={...tpl,sqid:"sq_"+Date.now(),progress:0,startedAt:Date.now(),expiresAt:Date.now()+tpl.days*86400000,completedAt:null};
+        setState(s=>({...s,specialQuests:[...s.specialQuests.filter(q=>q.completedAt),sq]}));
+      }
+    }
+  },[activeSq,completedSq]);
+
   function spawnFloat(txt,e){
     const id=Date.now()+Math.random(),x=e?e.clientX:200,y=e?e.clientY:300;
     setFloats(f=>[...f,{id,x,y,txt}]);
     setTimeout(()=>setFloats(f=>f.filter(p=>p.id!==id)),1300);
   }
 
-  function addXp(amount,stat,e){
+  function addXpFn(amount,stat,e){
     setState(s=>{
       const nt=s.totalXp+amount;
       const sx={...s.statXp,[stat]:(s.statXp[stat]||0)+amount};
@@ -285,39 +328,68 @@ function App(){
       if(getRank(nt).id!==getRank(s.totalXp).id)setTimeout(()=>setRankUp(getRank(nt)),100);
       return {...s,totalXp:nt,statXp:sx,stats:st,lastActiveDay:todayStr()};
     });
-    if(e)spawnFloat("+"+amount.toFixed(0)+"xp",e);
+    if(e)spawnFloat("+"+Math.round(amount)+"xp",e);
   }
 
   useEffect(()=>{
     if(allDailyReqDone&&!bonusGiven&&state.streak>0){
       setState(s=>({...s,streakBonusDay:today}));
-      addXp(100,"Discipline",null);
-      spawnFloat("+100 XP Discipline \uD83D\uDD25",null);
+      addXpFn(100,"Discipline",null);
     }
   },[allDailyReqDone]);
 
   useEffect(()=>{
     if(weeklyReqDone&&!weeklyBonusGiven){
       setState(s=>({...s,weeklyBonusWk:wk}));
-      addXp(150,"Discipline",null);
-      spawnFloat("+150 XP Discipline \uD83D\uDCC5",null);
+      addXpFn(150,"Discipline",null);
     }
   },[weeklyReqDone]);
 
   function validate(obj,e){
-    const raw=(inputs[obj.id]||"").toString().replace(",",".");
+    const raw=(inputs.current[obj.id]||"").toString().replace(",",".");
     const val=parseFloat(raw);if(!val||val<=0)return;
-    inputs[obj.id]="";
+    inputs.current[obj.id]="";
     const cur=obj.weekly?(wLog[obj.id]||0):(tLog[obj.id]||0);
     const tgt=getTarget(obj.base,ri);
     let xp=0;
-    if(obj.binary){const was=cur>=tgt,now=(cur+val)>=tgt;xp=(!was&&now)?(obj.binaryXp||100):0;}
+    if(obj.binary){const was=cur>=tgt,now2=(cur+val)>=tgt;xp=(!was&&now2)?(obj.binaryXp||50):0;}
     else{const nt=cur+val;if(cur>=tgt)xp=val*obj.xpPer*1.5;else if(nt<=tgt)xp=val*obj.xpPer;else{const n=tgt-cur;xp=n*obj.xpPer+(val-n)*obj.xpPer*1.5;}}
     setState(s=>{
       if(obj.weekly){const w={...s.weeklyLog};w[wk]={...(w[wk]||{}),[obj.id]:(w[wk]?.[obj.id]||0)+val};return{...s,weeklyLog:w,lastActiveDay:todayStr()};}
       const d={...s.dailyLog};d[today]={...(d[today]||{}),[obj.id]:(d[today]?.[obj.id]||0)+val};return{...s,dailyLog:d,lastActiveDay:todayStr()};
     });
-    if(xp>0)addXp(xp,obj.stat,e);else if(obj.binary)spawnFloat("0 XP",e);
+    if(xp>0)addXpFn(xp,obj.stat,e);else if(obj.binary)spawnFloat("0 XP",e);
+  }
+
+  function progressSq(sq,e){
+    const el=document.getElementById("sqi_"+sq.sqid);
+    if(!el)return;
+    const raw=el.value.toString().replace(",",".");
+    const val=parseFloat(raw);if(!val||val<=0)return;
+    el.value="";
+    const newProg=Math.min(sq.target,sq.progress+val);
+    const wasComplete=sq.progress>=sq.target;
+    const nowComplete=newProg>=sq.target;
+    if(!wasComplete){
+      const xpE=Math.round(sq.xp*(Math.min(val,sq.target-sq.progress)/sq.target));
+      if(xpE>0)addXpFn(xpE,sq.stat,e);
+      if(nowComplete)spawnFloat("\uD83C\uDFC6 QUETE SPECIALE !",e);
+    }
+    setState(s=>({...s,specialQuests:s.specialQuests.map(q=>q.sqid===sq.sqid
+      ?{...q,progress:newProg,completedAt:(nowComplete&&!wasComplete)?Date.now():q.completedAt}:q)}));
+  }
+
+  function launchNewSq(){
+    const used=sqs.map(q=>q.id);
+    const tpl=pickRandomSp(used);
+    if(!tpl)return;
+    const sq={...tpl,sqid:"sq_"+Date.now(),progress:0,startedAt:Date.now(),expiresAt:Date.now()+tpl.days*86400000,completedAt:null};
+    setState(s=>({...s,specialQuests:[...s.specialQuests.filter(q=>q.completedAt),sq]}));
+  }
+
+  function fmtCD(ms){
+    const d=Math.floor(ms/86400000),hh=Math.floor((ms%86400000)/3600000),mm=Math.floor((ms%3600000)/60000);
+    if(d>0)return d+"j "+hh+"h";if(hh>0)return hh+"h "+mm+"min";return mm+"min";
   }
 
   // ─── QI COMPONENT ──────────────────────────────────────────────────────────
@@ -338,16 +410,16 @@ function App(){
       ),
       h("div",{class:"qinrow"},
         h("input",{class:"qin",type:"text",inputMode:"decimal",placeholder:"+ "+obj.unit,id:"qi_"+obj.id,
-          onInput:ev=>{inputs[obj.id]=ev.target.value;}}),
+          onInput:ev=>{inputs.current[obj.id]=ev.target.value;}}),
         h("button",{class:"qbtn",onClick:e=>{
           const el=document.getElementById("qi_"+obj.id);
-          if(el)inputs[obj.id]=el.value;
+          if(el)inputs.current[obj.id]=el.value;
           validate(obj,e);
           if(el)el.value="";
         }},"+XP")
       ),
       h("div",{style:"font-size:10px;color:var(--td);margin-top:4px;font-family:Orbitron,sans-serif"},
-        obj.binary?"100 xp si \u2265 "+t+" "+obj.unit+" \u00b7 "+(STAT_LABELS[obj.stat]||obj.stat)
+        obj.binary?"50 xp si \u2265 "+t+" "+obj.unit+" \u00b7 "+(STAT_LABELS[obj.stat]||obj.stat)
                   :obj.xpPer+" xp/"+obj.unit+" \u00b7 "+(STAT_LABELS[obj.stat]||obj.stat)
       )
     );
@@ -368,12 +440,43 @@ function App(){
     );
   }
 
+  function SqCard({sq,showInput}){
+    const remaining=sq.expiresAt-now;
+    const urgent=remaining<86400000&&!sq.completedAt;
+    const pct=Math.min(100,(sq.progress/sq.target)*100);
+    return h("div",{class:"sqcard"+(urgent?" sq-urgent":"")},
+      h("div",{style:"display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px"},
+        h("div",{style:"display:flex;align-items:center;gap:8px"},
+          h("span",{style:"font-size:18px"},sq.icon),
+          h("div",null,
+            h("div",{style:"font-size:13px;font-weight:700;color:var(--tx)"},sq.name),
+            h("div",{style:"font-size:10px;color:var(--td);margin-top:1px"},sq.desc)
+          )
+        ),
+        h("div",{style:"text-align:right"},
+          h("div",{style:"font-family:Orbitron,sans-serif;font-size:11px;color:"+(urgent?"#ef4444":"#ef4444bb")},fmtCD(remaining)),
+          h("div",{style:"font-size:9px;color:var(--td)"},"restants")
+        )
+      ),
+      h("div",{class:"sqbar"},h("div",{class:"sqbarfill",style:"width:"+pct+"%"})),
+      h("div",{style:"display:flex;justify-content:space-between;font-size:10px;color:var(--td);margin-bottom:showInput?8:0"},
+        h("span",null,sq.progress+"/"+sq.target+" "+sq.unit),
+        h("span",{style:"color:#ef4444;font-family:Orbitron,sans-serif"},"+"+sq.xp+" XP \u00b7 "+(STAT_LABELS[sq.stat]||sq.stat))
+      ),
+      showInput&&h("div",{class:"qinrow",style:"margin-top:8px"},
+        h("input",{id:"sqi_"+sq.sqid,class:"qin",type:"text",inputMode:"decimal",placeholder:"+ "+sq.unit,style:"border-color:#ef444466",
+          onInput:ev=>{inputs.current["sq_"+sq.sqid]=ev.target.value;}}),
+        h("button",{class:"qbtn",style:"border-color:#ef444466;color:#ef4444",onClick:e=>{
+          const el=document.getElementById("sqi_"+sq.sqid);
+          if(el)inputs.current["sq_"+sq.sqid]=el.value;
+          progressSq(sq,e);
+        }},"+XP")
+      )
+    );
+  }
+
   // ─── HOME ──────────────────────────────────────────────────────────────────
   function Home(){
-    const now=Date.now();
-    const sqs=state.specialQuests||[];
-    const activeSq=sqs.find(q=>!q.completedAt&&now<q.expiresAt);
-    function fmtCD(ms){const d=Math.floor(ms/86400000),hh=Math.floor((ms%86400000)/3600000),mm=Math.floor((ms%3600000)/60000);if(d>0)return d+"j "+hh+"h";if(hh>0)return hh+"h "+mm+"min";return mm+"min";}
     const secs=[
       {lb:"\u2694 Qu\u00eates journali\u00e8res",ob:sortStat(state.objectives.filter(o=>o.daily&&!o.optional)),iw:false},
       {lb:"\u2728 Qu\u00eates bonus",ob:sortStat(state.objectives.filter(o=>o.daily&&o.optional)),iw:false},
@@ -419,26 +522,9 @@ function App(){
         h("div",{style:"font-size:11px;color:#c084fc99;margin-top:4px"},state.streak+" jour"+(state.streak>1?"s":"")+" de streak \u26A1"),
         weeklyBonusGiven&&h("div",{style:"font-size:11px;color:#c084fc88;margin-top:6px;font-family:Orbitron,sans-serif"},"\uD83D\uDCC5 Bonus hebdo +150 XP accord\u00e9 \u2705")
       ),
-      activeSq&&h("div",{class:"card",style:"border-color:#a855f744"},
-        h("div",{class:"ctitle",style:"color:#c084fc;margin-bottom:8px"},"\uD83C\uDFC6 Qu\u00eate sp\u00e9ciale"),
-        h("div",{style:"display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"},
-          h("div",{style:"display:flex;align-items:center;gap:8px"},
-            h("span",{style:"font-size:18px"},activeSq.icon),
-            h("div",null,
-              h("div",{style:"font-size:13px;font-weight:700;color:var(--tx)"},activeSq.name),
-              h("div",{style:"font-size:10px;color:var(--td);margin-top:1px"},activeSq.desc)
-            )
-          ),
-          h("div",{style:"text-align:right"},
-            h("div",{style:"font-family:Orbitron,sans-serif;font-size:11px;color:"+(activeSq.expiresAt-now<86400000?"#ef4444":"#c084fc")},fmtCD(activeSq.expiresAt-now)),
-            h("div",{style:"font-size:10px;color:var(--td);margin-top:1px"},"restants")
-          )
-        ),
-        h("div",{class:"sqbar"},h("div",{class:"sqbarfill",style:"width:"+Math.min(100,(activeSq.progress/activeSq.target)*100)+"%"})),
-        h("div",{style:"display:flex;justify-content:space-between;font-size:10px;color:var(--td);margin-top:4px"},
-          h("span",null,activeSq.progress+"/"+activeSq.target+" "+activeSq.unit),
-          h("span",{style:"color:#c084fc;font-family:Orbitron,sans-serif"},"+"+activeSq.xp+" XP \u00b7 "+(STAT_LABELS[activeSq.stat]||activeSq.stat))
-        )
+      activeSq&&h("div",{class:"card",style:"border-color:#ef444444"},
+        h("div",{class:"ctitle",style:"color:#ef4444;margin-bottom:8px"},"\uD83C\uDFC6 Qu\u00eate sp\u00e9ciale"),
+        h(SqCard,{sq:activeSq,showInput:false})
       ),
       secs.map(({lb,ob,iw})=>ob.length===0?null:
         h("div",{key:lb,class:"card"},h("div",{class:"ctitle"},lb),ob.map(o=>h(RR,{key:o.id,obj:o,isW:iw})))
@@ -451,55 +537,15 @@ function App(){
     const req=sortStat(state.objectives.filter(o=>o.daily&&!o.optional));
     const bon=sortStat(state.objectives.filter(o=>o.daily&&o.optional));
     const wkq=sortStat(state.objectives.filter(o=>o.weekly));
-    const now=Date.now();
-    const sqs=state.specialQuests||[];
-    // 1 quête spéciale active à la fois
-    const activeSq=sqs.find(q=>!q.completedAt&&now<q.expiresAt);
-    const completedSq=sqs.find(q=>q.completedAt&&(now-q.completedAt)<86400000);
-
-    function launchRandom(){
-      const used=sqs.map(q=>q.id);
-      const avail=SP_TEMPLATES.filter(t=>!used.includes(t.id));
-      if(avail.length===0)return;
-      const tpl=avail[Math.floor(Math.random()*avail.length)];
-      const sq={...tpl,sqid:"sq_"+Date.now(),progress:0,startedAt:now,expiresAt:now+tpl.days*86400000,completedAt:null};
-      setState(s=>({...s,specialQuests:[...s.specialQuests.filter(q=>q.completedAt),sq]}));
-    }
-
-    function progressSq(sq,e){
-      const el=document.getElementById("sqi_"+sq.sqid);
-      if(!el)return;
-      const raw=el.value.toString().replace(",",".");
-      const val=parseFloat(raw);if(!val||val<=0)return;
-      el.value="";
-      const newProg=Math.min(sq.target,sq.progress+val);
-      const wasComplete=sq.progress>=sq.target;
-      const nowComplete=newProg>=sq.target;
-      if(!wasComplete){
-        const xpEarned=Math.round(sq.xp*(Math.min(val,sq.target-sq.progress)/sq.target));
-        if(xpEarned>0)addXp(xpEarned,sq.stat,e);
-        if(nowComplete)spawnFloat("\uD83C\uDFC6 +"+sq.xp+" XP",e);
-      }
-      setState(s=>({...s,specialQuests:s.specialQuests.map(q=>q.sqid===sq.sqid
-        ?{...q,progress:newProg,completedAt:(nowComplete&&!wasComplete)?Date.now():q.completedAt}
-        :q)}));
-    }
-
-    function fmtCD(ms){
-      const d=Math.floor(ms/86400000),hh=Math.floor((ms%86400000)/3600000),mm=Math.floor((ms%3600000)/60000);
-      if(d>0)return d+"j "+hh+"h";if(hh>0)return hh+"h "+mm+"min";return mm+"min";
-    }
-
     return h("div",{class:"tab"},
-      h("div",{class:"card",style:"border-color:#a855f744"},
+      h("div",{class:"card",style:"border-color:#ef444444"},
         h("div",{class:"shdr"},
           h("div",null,
-            h("div",{class:"ctitle",style:"margin:0;color:#c084fc"},"\uD83C\uDFC6 Qu\u00eate sp\u00e9ciale"),
-            h("div",{style:"font-size:10px;color:var(--td);margin-top:2px"},"1 d\u00e9fi ponctuel \u00e0 la fois \u00b7 Gros bonus XP")
-          ),
-          !activeSq&&!completedSq&&h("button",{class:"addbtn",style:"border-color:#a855f766;color:#c084fc",onClick:launchRandom},"\uD83C\uDFB2 D\u00e9fi al\u00e9atoire")
+            h("div",{class:"ctitle",style:"margin:0;color:#ef4444"},"\uD83C\uDFC6 Qu\u00eate sp\u00e9ciale"),
+            h("div",{style:"font-size:10px;color:var(--td);margin-top:2px"},"1 d\u00e9fi ponctuel \u00e0 la fois")
+          )
         ),
-        !activeSq&&!completedSq&&h("div",{style:"font-size:12px;color:var(--td);text-align:center;padding:8px 0"},"Aucun d\u00e9fi en cours \u2014 lance-toi !"),
+        activeSq&&h(SqCard,{sq:activeSq,showInput:true}),
         completedSq&&h("div",{class:"sqcard"},
           h("div",{style:"display:flex;align-items:center;gap:10px"},
             h("span",{style:"font-size:20px"},completedSq.icon),
@@ -508,37 +554,16 @@ function App(){
               h("div",{style:"font-size:11px;color:var(--td);margin-top:2px"},"+"+completedSq.xp+" XP \u00b7 "+(STAT_LABELS[completedSq.stat]||completedSq.stat))
             )
           ),
-          h("div",{style:"font-size:10px;color:var(--td);margin-top:8px;text-align:center"},"Un nouveau d\u00e9fi sera disponible demain"),
-          h("button",{class:"addbtn",style:"border-color:#a855f766;color:#c084fc;width:100%;margin-top:8px;text-align:center",onClick:()=>{
+          h("button",{class:"addbtn",style:"border-color:#ef444466;color:#ef4444;width:100%;margin-top:10px;text-align:center",onClick:()=>{
             setState(s=>({...s,specialQuests:s.specialQuests.filter(q=>q.sqid!==completedSq.sqid)}));
-            launchRandom();
+            launchNewSq();
           }},"\uD83C\uDFB2 Lancer un nouveau d\u00e9fi")
         ),
-        activeSq&&h("div",{class:"sqcard"},
-          h("div",{style:"display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px"},
-            h("div",null,
-              h("div",{style:"font-size:15px;font-weight:700;color:var(--tx)"},activeSq.icon+" "+activeSq.name),
-              h("div",{style:"font-size:11px;color:var(--td);margin-top:2px"},activeSq.desc)
-            ),
-            h("span",{style:"font-family:Orbitron,sans-serif;font-size:10px;color:"+(activeSq.expiresAt-now<86400000?"#ef4444":"#c084fc")},fmtCD(activeSq.expiresAt-now)+" restants")
-          ),
-          h("div",{class:"sqbar"},h("div",{class:"sqbarfill",style:"width:"+Math.min(100,(activeSq.progress/activeSq.target)*100)+"%"})),
-          h("div",{style:"display:flex;justify-content:space-between;font-size:10px;color:var(--td);margin-bottom:8px"},
-            h("span",null,activeSq.progress+"/"+activeSq.target+" "+activeSq.unit),
-            h("span",{style:"color:#c084fc;font-family:Orbitron,sans-serif"},"+"+activeSq.xp+" XP \u00b7 "+(STAT_LABELS[activeSq.stat]||activeSq.stat))
-          ),
-          h("div",{class:"qinrow"},
-            h("input",{id:"sqi_"+activeSq.sqid,class:"qin",type:"text",inputMode:"decimal",placeholder:"+ "+activeSq.unit,style:"border-color:#a855f766",
-              onInput:ev=>{inputs["sq_"+activeSq.sqid]=ev.target.value;}}),
-            h("button",{class:"qbtn",style:"border-color:#a855f766;color:#c084fc",onClick:e=>progressSq(activeSq,e)},"+XP")
-          )
-        )
+        !activeSq&&!completedSq&&h("div",{style:"font-size:12px;color:var(--td);text-align:center;padding:8px 0"},"Chargement du d\u00e9fi...")
       ),
-
       h("div",{class:"card"},h("div",{class:"shdr"},h("div",{class:"ctitle",style:"margin:0"},"\u2694 Qu\u00eates journali\u00e8res")),req.map(o=>h(QI,{key:o.id,obj:o}))),
       bon.length>0&&h("div",{class:"card"},h("div",{class:"ctitle"},"\u2728 Qu\u00eates bonus"),bon.map(o=>h(QI,{key:o.id,obj:o}))),
       wkq.length>0&&h("div",{class:"card"},h("div",{class:"ctitle"},"\uD83D\uDCC5 Qu\u00eates hebdomadaires"),wkq.map(o=>h(QI,{key:o.id,obj:o}))),
-
       h("div",{class:"card"},
         h("div",{class:"shdr"},h("div",{class:"ctitle",style:"margin:0"},"Nouvelle qu\u00eate"),h("button",{class:"addbtn",onClick:()=>setShowAdd(v=>!v)},showAdd?"Fermer":"+ Ajouter")),
         showAdd&&h("div",{class:"addform"},
@@ -603,7 +628,7 @@ function App(){
         h("div",{class:"wgrid"},days.map((d,i)=>{
           const log=state.dailyLog[d]||{};
           const xp=Object.entries(log).reduce((s,[id,a])=>{const o=state.objectives.find(x=>x.id===id);return s+(o?calcXp(o,a,ri):0);},0);
-          const rgb=rank.color.replace("#","").match(/../g).map(h=>parseInt(h,16)).join(",");
+          const rgb=rank.color.replace("#","").match(/../g).map(x=>parseInt(x,16)).join(",");
           const int=xp>100?1:xp>50?.7:xp>10?.4:xp>0?.2:0;
           return h("div",{key:d,class:"wday"},
             h("div",{class:"wdlbl"},dlbls[i]),
@@ -707,11 +732,10 @@ function App(){
         h("div",{class:"divider"}),
         h("div",{class:"msec"},
           h("div",{class:"mlbl"},"\uD83D\uDCBE Sauvegarde / Restauration"),
-          h("div",{style:"font-size:11px;color:var(--td);margin-bottom:10px;line-height:1.6"},"Exporte depuis Safari iPhone, importe sur Chrome PC (ou inversement)."),
           h("div",{class:"mrow",style:"margin-bottom:8px"},
             h("button",{class:"mbtn mprim",style:"flex:1",onClick:()=>{
               const json=JSON.stringify(state);
-              navigator.clipboard.writeText(json).then(()=>alert("\u2705 Donn\u00e9es copi\u00e9es !\nColle-les dans une note.")).catch(()=>window.prompt("Copie ce texte :",json));
+              navigator.clipboard.writeText(json).then(()=>alert("\u2705 Donn\u00e9es copi\u00e9es !")).catch(()=>window.prompt("Copie ce texte :",json));
             }},"\uD83D\uDCCB Exporter"),
             h("button",{class:"mbtn mprim",style:"flex:1",onClick:()=>{
               const json=window.prompt("Colle tes donn\u00e9es ici :");
@@ -723,7 +747,6 @@ function App(){
         h("div",{class:"divider"}),
         h("div",{class:"msec"},
           h("div",{class:"mlbl"},"\uD83D\uDD04 Restaurer les donn\u00e9es sauvegard\u00e9es"),
-          h("div",{style:"font-size:11px;color:var(--td);margin-bottom:10px;line-height:1.5"},"Recharge les derni\u00e8res donn\u00e9es int\u00e9gr\u00e9es dans le fichier."),
           h("button",{class:"mbtn",style:"width:100%;background:#16a34a22;border:1px solid #16a34a88;color:#4ade80",onClick:()=>{localStorage.removeItem("sl_v3");setState(buildFromImported());setShowSet(false);}},"\u21A9 Restaurer les donn\u00e9es")
         ),
         h("div",{class:"divider"}),
