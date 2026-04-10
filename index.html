@@ -174,7 +174,7 @@ const getTarget  = base => base; // pas de scaling rang pour l'instant
 const todayStr   = () => new Date().toISOString().slice(0,10);
 const wkStr      = () => { const d=new Date(),j=new Date(d.getFullYear(),0,1); return d.getFullYear()+"-W"+Math.ceil(((d-j)/86400000+j.getDay()+1)/7); };
 const sortStat   = arr => [...arr].sort((a,b)=>STATS.indexOf(a.stat)-STATS.indexOf(b.stat));
-const xpForLvl   = l => Math.round(100*Math.pow(1.1,l));
+const xpForLvl   = l => Math.round(100*Math.pow(2,l));
 const totForLvl  = l => { let t=0; for(let i=0;i<l;i++)t+=xpForLvl(i); return t; };
 const getLvl     = xp => { let l=0; while(xp>=totForLvl(l+1))l++; return l; };
 
@@ -206,19 +206,19 @@ const saveState  = s  => { try{ localStorage.setItem("sl_v3",JSON.stringify(s));
 // ─── DONNEES IMPORTEES ─────────────────────────────────────────────────────
 
 const IMPORTED = {
-  totalXp:3330, streak:3, lastActiveDay:"2026-04-10",
-  streakBonusDay:null, weeklyBonusWk:"2026-W15", lastStreakDay:"2026-04-09",
+  totalXp:3703.5, streak:4, lastActiveDay:"2026-04-10",
+  streakBonusDay:"2026-04-10", weeklyBonusWk:"2026-W15", lastStreakDay:"2026-04-10",
   dailyLog:{
     "2026-04-06":{water:8,push:36,abs:72,sleep:8},
     "2026-04-07":{water:8,push:36,abs:72,squats:15,reading:11,flex:5,sleep:8,med:6},
     "2026-04-08":{water:11,push:100,abs:115,squats:35,reading:48,sleep:8,med:6,flex:20},
     "2026-04-09":{water:9,sleep:8,push:41,abs:64,squats:16,reading:13,flex:0,med:0},
-    "2026-04-10":{water:6,sleep:8,push:77,abs:60,squats:16,reading:17,flex:0,med:10}
+    "2026-04-10":{water:10,sleep:8,push:77,abs:110,squats:40,reading:19,flex:2,med:10}
   },
-  weeklyLog:{"2026-W15":{run:10}},
-  stats:{Vitalite:5,Force:6,Esprit:5,Endurance:4,Discipline:4},
-  statXp:{Vitalite:632.5,Force:877.5,Esprit:695,Endurance:575,Discipline:550},
-  specialQuests:[],
+  weeklyLog:{"2026-W15":{run:11.5}},
+  stats:{Vitalite:2,Force:3,Esprit:3,Endurance:2,Discipline:2},
+  statXp:{Vitalite:667.5,Force:988.5,Esprit:710,Endurance:687.5,Discipline:650},
+  specialQuests:[{id:"sp_pull",name:"Tractions",icon:"\uD83C\uDFCB\uFE0F",unit:"reps",target:30,xp:300,days:1,desc:"30 tractions en 24h",stat:"Force",sqid:"sq_1775836505456",progress:5,startedAt:1775836505456,expiresAt:1775922905456,completedAt:null}],
   objectives:DEFS,
 };
 
