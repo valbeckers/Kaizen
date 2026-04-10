@@ -130,7 +130,7 @@ const DEFS = [
   {id:"squats", name:"Squats",         unit:"reps", xpPer:1,  daily:true, weekly:false,optional:false,stat:"Force",    icon:"\uD83E\uDDBF",              base:15},
   {id:"water",  name:"Hydratation",    unit:"verres",xpPer:5, daily:true, weekly:false,optional:false,stat:"Vitalite", icon:"\uD83D\uDCA7",              base:8},
   {id:"reading",name:"Lecture",        unit:"pages",xpPer:5,  daily:true, weekly:false,optional:false,stat:"Esprit",   icon:"\uD83D\uDCDA",              base:10},
-  {id:"run",    name:"Course",         unit:"km",   xpPer:25, daily:false,weekly:true, optional:false,stat:"Endurance",icon:"\uD83C\uDFC3\uD83C\uDFFB",  base:7},
+  {id:"run",    name:"Course",         unit:"km",   xpPer:50, daily:false,weekly:true, optional:false,stat:"Endurance",icon:"\uD83C\uDFC3\uD83C\uDFFB",  base:7},
   {id:"med",    name:"M\u00e9ditation",unit:"min",  xpPer:5,  daily:true, weekly:false,optional:true, stat:"Esprit",   icon:"\uD83E\uDDD8\uD83C\uDFFB",  base:5},
   {id:"flex",   name:"Souplesse",      unit:"min",  xpPer:5,  daily:true, weekly:false,optional:true, stat:"Vitalite", icon:"\uD83E\uDD38\uD83C\uDFFB",  base:5},
   {id:"sleep",  name:"Sommeil",        unit:"h",    xpPer:0,  daily:true, weekly:false,optional:true, stat:"Vitalite", icon:"\uD83D\uDECF\uFE0F",        base:8, binary:true, binaryXp:50},
@@ -252,18 +252,18 @@ const saveState  = s  => { try{ localStorage.setItem("sl_v3",JSON.stringify(s));
 // ─── DONNEES IMPORTEES ─────────────────────────────────────────────────────
 
 const IMPORTED = {
-  totalXp:2803.5, streak:0, lastActiveDay:"2026-04-10",
-  streakBonusDay:"2026-04-09", weeklyBonusWk:"2026-W15", lastStreakDay:"2026-04-09",
+  totalXp:3252.5, streak:3, lastActiveDay:"2026-04-10",
+  streakBonusDay:null, weeklyBonusWk:"2026-W15", lastStreakDay:"2026-04-09",
   dailyLog:{
     "2026-04-06":{water:8,push:36,abs:72,sleep:8},
     "2026-04-07":{water:8,push:36,abs:72,squats:15,reading:11,flex:5,sleep:8,med:6},
     "2026-04-08":{water:11,push:100,abs:115,squats:35,reading:48,sleep:8,med:6,flex:20},
     "2026-04-09":{water:9,sleep:8,push:41,abs:64,squats:16,reading:13,flex:0,med:0},
-    "2026-04-10":{water:2,sleep:8,push:41,abs:60,squats:16}
+    "2026-04-10":{water:3,sleep:8,push:77,abs:60,squats:16,reading:17,flex:0,med:0}
   },
   weeklyLog:{"2026-W15":{run:10}},
-  stats:{Vitalite:5,Force:6,Esprit:4,Endurance:2,Discipline:4},
-  statXp:{Vitalite:612.5,Force:823.5,Esprit:530,Endurance:287.5,Discipline:550},
+  stats:{Vitalite:5,Force:6,Esprit:5,Endurance:4,Discipline:4},
+  statXp:{Vitalite:617.5,Force:877.5,Esprit:632.5,Endurance:575,Discipline:550},
   specialQuests:[{id:"sp_sprint",name:"Sprints",icon:"\u26A1",unit:"s\u00e9ries",target:10,xp:300,days:3,desc:"10 x 100m sprint/r\u00e9cup",stat:"Endurance",sqid:"sq_1775740155740",progress:0,startedAt:1775740155740,expiresAt:1775999355740,completedAt:null}],
   trialCompleted:{},
   objectives:DEFS,
