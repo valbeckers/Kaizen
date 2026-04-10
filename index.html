@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -95,9 +96,6 @@ html,body{height:100%;background:#0a0a0f;color:var(--tx);font-family:'Rajdhani',
 @keyframes urgentPulse{0%,100%{box-shadow:0 0 0 0 #ef444444}50%{box-shadow:0 0 0 6px #ef444400}}
 .sqbar{height:4px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;margin:6px 0}
 .sqbarfill{height:100%;border-radius:2px;background:linear-gradient(90deg,#991b1b,#ef4444);transition:width .4s}
-.trial-card{border-radius:12px;padding:16px;margin-bottom:12px}
-.trial-bar{height:5px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;margin-top:3px}
-.trial-fill{height:100%;border-radius:3px;transition:width .4s}
 .divider{height:1px;background:linear-gradient(90deg,transparent,var(--rc),transparent);margin:8px 0 16px;opacity:.3}
 </style>
 </head>
@@ -135,45 +133,6 @@ const DEFS = [
   {id:"flex",   name:"Souplesse",      unit:"min",  xpPer:5,  daily:true, weekly:false,optional:true, stat:"Vitalite", icon:"\uD83E\uDD38\uD83C\uDFFB",  base:5},
   {id:"sleep",  name:"Sommeil",        unit:"h",    xpPer:0,  daily:true, weekly:false,optional:true, stat:"Vitalite", icon:"\uD83D\uDECF\uFE0F",        base:8, binary:true, binaryXp:50},
 ];
-
-// Epreuves d'evolution — debloquent le rang suivant
-const TRIALS = {
-  E:{label:"\u00c9preuve du Rang D",nextId:"D",tasks:[
-    {id:"run",   name:"Course",    unit:"km",   target:3.2, icon:"\uD83C\uDFC3\uD83C\uDFFB",daily:false},
-    {id:"push",  name:"Pompes",    unit:"reps", target:63,  icon:"\uD83E\uDDBE",            daily:true},
-    {id:"abs",   name:"Abdominaux",unit:"reps", target:63,  icon:"\uD83E\uDDCE\uD83C\uDFFB",daily:true},
-    {id:"squats",name:"Squats",    unit:"reps", target:32,  icon:"\uD83E\uDDBF",            daily:true},
-    {id:"reading",name:"Lecture",  unit:"pages",target:32,  icon:"\uD83D\uDCDA",            daily:true},
-  ]},
-  D:{label:"\u00c9preuve du Rang C",nextId:"C",tasks:[
-    {id:"run",   name:"Course",    unit:"km",   target:4.2, icon:"\uD83C\uDFC3\uD83C\uDFFB",daily:false},
-    {id:"push",  name:"Pompes",    unit:"reps", target:84,  icon:"\uD83E\uDDBE",            daily:true},
-    {id:"abs",   name:"Abdominaux",unit:"reps", target:84,  icon:"\uD83E\uDDCE\uD83C\uDFFB",daily:true},
-    {id:"squats",name:"Squats",    unit:"reps", target:42,  icon:"\uD83E\uDDBF",            daily:true},
-    {id:"reading",name:"Lecture",  unit:"pages",target:42,  icon:"\uD83D\uDCDA",            daily:true},
-  ]},
-  C:{label:"\u00c9preuve du Rang B",nextId:"B",tasks:[
-    {id:"run",   name:"Course",    unit:"km",   target:5.6, icon:"\uD83C\uDFC3\uD83C\uDFFB",daily:false},
-    {id:"push",  name:"Pompes",    unit:"reps", target:113, icon:"\uD83E\uDDBE",            daily:true},
-    {id:"abs",   name:"Abdominaux",unit:"reps", target:113, icon:"\uD83E\uDDCE\uD83C\uDFFB",daily:true},
-    {id:"squats",name:"Squats",    unit:"reps", target:56,  icon:"\uD83E\uDDBF",            daily:true},
-    {id:"reading",name:"Lecture",  unit:"pages",target:56,  icon:"\uD83D\uDCDA",            daily:true},
-  ]},
-  B:{label:"\u00c9preuve du Rang A",nextId:"A",tasks:[
-    {id:"run",   name:"Course",    unit:"km",   target:7.5, icon:"\uD83C\uDFC3\uD83C\uDFFB",daily:false},
-    {id:"push",  name:"Pompes",    unit:"reps", target:150, icon:"\uD83E\uDDBE",            daily:true},
-    {id:"abs",   name:"Abdominaux",unit:"reps", target:150, icon:"\uD83E\uDDCE\uD83C\uDFFB",daily:true},
-    {id:"squats",name:"Squats",    unit:"reps", target:75,  icon:"\uD83E\uDDBF",            daily:true},
-    {id:"reading",name:"Lecture",  unit:"pages",target:75,  icon:"\uD83D\uDCDA",            daily:true},
-  ]},
-  A:{label:"\u00c9preuve du Rang S",nextId:"S",tasks:[
-    {id:"run",   name:"Course",    unit:"km",   target:10,  icon:"\uD83C\uDFC3\uD83C\uDFFB",daily:false},
-    {id:"push",  name:"Pompes",    unit:"reps", target:200, icon:"\uD83E\uDDBE",            daily:true},
-    {id:"abs",   name:"Abdominaux",unit:"reps", target:200, icon:"\uD83E\uDDCE\uD83C\uDFFB",daily:true},
-    {id:"squats",name:"Squats",    unit:"reps", target:100, icon:"\uD83E\uDDBF",            daily:true},
-    {id:"reading",name:"Lecture",  unit:"pages",target:100, icon:"\uD83D\uDCDA",            daily:true},
-  ]},
-};
 
 // Quetes speciales — 5 par stat
 const SP = {
@@ -241,11 +200,6 @@ function pickRandomSq(usedIds){
   return {...avail[Math.floor(Math.random()*avail.length)],stat};
 }
 
-function getTrialProgress(task,dailyLog,weeklyLog){
-  if(!task.daily)return Object.values(weeklyLog).reduce((t,l)=>Math.max(t,l[task.id]||0),0);
-  return Object.values(dailyLog).reduce((t,l)=>Math.max(t,l[task.id]||0),0);
-}
-
 const loadState  = () => { try{ const r=localStorage.getItem("sl_v3"); return r?JSON.parse(r):null; }catch{return null;} };
 const saveState  = s  => { try{ localStorage.setItem("sl_v3",JSON.stringify(s)); }catch{} };
 
@@ -265,24 +219,23 @@ const IMPORTED = {
   stats:{Vitalite:5,Force:6,Esprit:5,Endurance:4,Discipline:4},
   statXp:{Vitalite:617.5,Force:877.5,Esprit:632.5,Endurance:575,Discipline:550},
   specialQuests:[{id:"sp_sprint",name:"Sprints",icon:"\u26A1",unit:"s\u00e9ries",target:10,xp:300,days:3,desc:"10 x 100m sprint/r\u00e9cup",stat:"Endurance",sqid:"sq_1775740155740",progress:0,startedAt:1775740155740,expiresAt:1775999355740,completedAt:null}],
-  trialCompleted:{},
   objectives:DEFS,
 };
 
 function buildState(){
   const saved=loadState();
   if(!saved)return IMPORTED;
-  // Migration : s'assurer que tous les champs existent
   return {
     ...IMPORTED,
     ...saved,
-    objectives:DEFS, // toujours utiliser les DEFS a jour
-    trialCompleted:saved.trialCompleted||{},
+    objectives:DEFS,
     specialQuests:saved.specialQuests||[],
     stats:saved.stats||IMPORTED.stats,
     statXp:saved.statXp||IMPORTED.statXp,
     dailyLog:saved.dailyLog||IMPORTED.dailyLog,
     weeklyLog:saved.weeklyLog||IMPORTED.weeklyLog,
+    // Ne jamais garder un totalXp inférieur à ce qu'on a calculé
+    totalXp:Math.max(saved.totalXp||0, IMPORTED.totalXp),
   };
 }
 
@@ -337,21 +290,7 @@ function App(){
   const tLog  = state.dailyLog[today]||{};
   const wLog  = state.weeklyLog[wk]||{};
 
-  // 1. Rang brut depuis totalXp
-  const rawRank = getRank(state.totalXp);
-
-  // 2. Epreuve du rang brut
-  const trial         = TRIALS[rawRank.id]||null;
-  const trialDone     = !!(state.trialCompleted||{})[rawRank.id];
-  const trialActive   = trial && !trialDone && state.totalXp>=(getNext(rawRank.id)||{xpRequired:Infinity}).xpRequired;
-  const trialAllDone  = trial ? trial.tasks.every(t=>getTrialProgress(t,state.dailyLog,state.weeklyLog)>=t.target) : false;
-
-  // 3. XP effectif (bloque si epreuve active)
-  const nextRankForCap = getNext(rawRank.id);
-  const xpCap          = trialActive ? nextRankForCap.xpRequired : Infinity;
-  const effectiveXp    = Math.min(state.totalXp, xpCap);
-
-  // 4. Rang affiche = rang depuis effectiveXp
+  const effectiveXp = state.totalXp;
   const rank     = getRank(effectiveXp);
   const nextRank = getNext(rank.id);
   const ri       = RANKS.findIndex(r=>r.id===rank.id);
@@ -372,7 +311,7 @@ function App(){
   const reqDailyObjs  = objs.filter(o=>!o.optional&&o.daily);
   const allDailyDone  = reqDailyObjs.every(o=>(tLog[o.id]||0)>=o.base);
 
-  // 8. Streak calcule depuis dailyLog
+  // 8. Streak : calculé depuis dailyLog mais ne descend jamais sous le streak sauvegardé si hier était complet
   const computedStreak = (()=>{
     let streak=0, d=new Date(today);
     for(let i=0;i<365;i++){
@@ -381,6 +320,15 @@ function App(){
       if(!reqDailyObjs.every(o=>(log[o.id]||0)>=o.base))break;
       streak++; d.setDate(d.getDate()-1);
     }
+    // Si aujourd'hui est incomplet, le streak "en cours" = streak des jours passés
+    // On prend le max entre ce qui est calculé et le streak sauvegardé
+    // pour éviter de perdre le streak affiché pendant la journée
+    const yesterday=new Date(today);yesterday.setDate(yesterday.getDate()-1);
+    const yk=yesterday.toISOString().slice(0,10);
+    const yesterdayLog=state.dailyLog[yk]||{};
+    const yesterdayDone=reqDailyObjs.every(o=>(yesterdayLog[o.id]||0)>=o.base);
+    // Si hier était complet, on affiche au moins le streak sauvegardé
+    if(yesterdayDone && streak===0) return state.streak;
     return streak;
   })();
 
@@ -458,14 +406,6 @@ function App(){
     }
   },[]);
 
-  // Validation automatique epreuve
-  useEffect(()=>{
-    if(!trialActive||!trialAllDone)return;
-    setState(s=>({...s,trialCompleted:{...(s.trialCompleted||{}),[rawRank.id]:true}}));
-    const nr=getNext(rawRank.id);
-    if(nr)setTimeout(()=>setRankUp(nr),500);
-  },[trialAllDone]);
-
   // ─── ACTIONS ──────────────────────────────────────────────────────────
 
   function spawnFloat(txt,e){
@@ -476,17 +416,10 @@ function App(){
 
   function addXp(amount,stat,e){
     setState(s=>{
-      // Bloquer si epreuve active
-      const rk=getRank(s.totalXp);
-      const nrk=getNext(rk.id);
-      const trl=TRIALS[rk.id];
-      const tDone=!!(s.trialCompleted||{})[rk.id];
-      const tActive=trl&&!tDone&&nrk&&s.totalXp>=nrk.xpRequired;
-      const cap=tActive?nrk.xpRequired:Infinity;
-      const nt=Math.min(s.totalXp+amount,cap);
+      const nt=s.totalXp+amount;
       const sx={...s.statXp,[stat]:(s.statXp[stat]||0)+amount};
-      // Rank up seulement si pas de trial ou trial deja done
-      if(!tActive&&nrk&&getRank(nt).id!==rk.id)setTimeout(()=>setRankUp(getRank(nt)),100);
+      const rk=getRank(s.totalXp), nrk=getNext(rk.id);
+      if(nrk&&getRank(nt).id!==rk.id)setTimeout(()=>setRankUp(getRank(nt)),100);
       return {...s,totalXp:nt,statXp:sx,stats:{...s.stats,[stat]:getLvl(sx[stat])},lastActiveDay:todayStr()};
     });
     if(e)spawnFloat("+"+Math.round(amount)+"xp",e);
@@ -613,35 +546,6 @@ function App(){
     );
   }
 
-  function TrialCard({compact}){
-    if(!trialActive)return null;
-    const nr=getNext(rawRank.id); if(!nr)return null;
-    const tasks=trial.tasks.map(t=>({...t,progress:getTrialProgress(t,state.dailyLog,state.weeklyLog),done:getTrialProgress(t,state.dailyLog,state.weeklyLog)>=t.target}));
-    const doneCnt=tasks.filter(t=>t.done).length;
-    return h("div",{class:"trial-card",style:"background:linear-gradient(135deg,"+nr.color+"15,"+nr.color+"05);border:1px solid "+nr.color+"55;margin-bottom:12px"},
-      h("div",{style:"display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"},
-        h("div",null,
-          h("div",{style:"font-family:Orbitron,sans-serif;font-size:10px;letter-spacing:2px;color:"+nr.color+";text-transform:uppercase;margin-bottom:3px"},"\u2694 EPREUVE D'\u00c9VOLUTION"),
-          h("div",{style:"font-family:Orbitron,sans-serif;font-size:14px;font-weight:700;color:"+nr.color},trial.label)
-        ),
-        h("div",{style:"font-family:Orbitron,sans-serif;font-size:14px;font-weight:700;color:"+nr.color},doneCnt+"/"+trial.tasks.length)
-      ),
-      tasks.map(t=>h("div",{key:t.id,style:"display:flex;align-items:center;gap:10px;margin-bottom:8px"},
-        h("span",{style:"font-size:16px"},t.icon),
-        h("div",{style:"flex:1"},
-          h("div",{style:"display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"},
-            h("span",{style:"color:"+(t.done?nr.color:"var(--tx)")},t.name),
-            h("span",{style:"font-family:Orbitron,sans-serif;font-size:10px;color:"+(t.done?nr.color:"var(--td)") },
-              (t.progress%1===0?t.progress:t.progress.toFixed(1))+"/"+t.target+" "+t.unit)
-          ),
-          h("div",{class:"trial-bar"},h("div",{class:"trial-fill",style:"width:"+Math.min(100,(t.progress/t.target)*100)+"%;background:"+nr.color}))
-        ),
-        t.done&&h("span",{style:"font-size:18px"},"✅")
-      )),
-      compact&&h("div",{style:"font-size:10px;color:"+nr.color+"99;margin-top:8px;text-align:center;font-family:Orbitron,sans-serif"},"XP bloqu\u00e9 jusqu'\u00e0 la validation")
-    );
-  }
-
   // ─── ONGLET ACCUEIL ───────────────────────────────────────────────────
 
   function Home(){
@@ -670,7 +574,7 @@ function App(){
         h("div",{class:"xpbar",style:"height:8px"},h("div",{class:"xpfill",style:"width:"+rankPct+"%"})),
         h("div",{style:"display:flex;justify-content:space-between;font-size:10px;color:var(--td);margin-top:5px;font-family:Orbitron,sans-serif"},
           h("span",null,state.totalXp.toFixed(0)+" XP"),
-          h("span",{style:"color:var(--rc)"},trialActive?"XP bloqu\u00e9 \u2014 compl\u00e9tez l'\u00e9preuve":(nextRank.xpRequired-state.totalXp).toFixed(0)+" XP manquants")
+          h("span",{style:"color:var(--rc)"},(nextRank.xpRequired-state.totalXp).toFixed(0)+" XP manquants")
         ),
         h("div",{style:"display:grid;grid-template-columns:1fr 1px 1fr;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06)"},
           h("div",{style:"text-align:center"},
@@ -689,7 +593,6 @@ function App(){
         h("div",{style:"font-size:22px;font-family:Orbitron,sans-serif;font-weight:900;color:#c084fc"},"+100 XP Discipline"),
         weeklyBonusGiven&&h("div",{style:"font-size:11px;color:#c084fc88;margin-top:6px;font-family:Orbitron,sans-serif"},"\uD83D\uDCC5 Bonus hebdo +150 XP accord\u00e9 \u2705")
       ),
-      h(TrialCard,{compact:true}),
       activeSq&&h("div",{class:"card",style:"border-color:#ef444444"},
         h("div",{class:"ctitle",style:"color:#ef4444;margin-bottom:8px"},"\uD83C\uDFC6 Qu\u00eate sp\u00e9ciale"),
         h(SqCard,{sq:activeSq,showInput:false})
@@ -707,7 +610,6 @@ function App(){
     const bon=sortStat(objs.filter(o=>o.daily&&o.optional));
     const wkq=sortStat(objs.filter(o=>o.weekly));
     return h("div",{class:"tab"},
-      h(TrialCard,{compact:false}),
       h("div",{class:"card",style:"border-color:#ef444444"},
         h("div",{class:"shdr"},
           h("div",null,
@@ -939,7 +841,7 @@ function App(){
             :h("div",null,
                 h("div",{style:"font-size:13px;color:#ef4444;margin-bottom:12px;text-align:center"},"\u26A0\uFE0F Action irr\u00e9versible. Toute ta progression sera perdue."),
                 h("div",{class:"mrow"},
-                  h("button",{class:"mbtn mdng",style:"flex:1",onClick:()=>{localStorage.removeItem("sl_v3");setState({...IMPORTED,totalXp:0,streak:0,statXp:{Vitalite:0,Force:0,Esprit:0,Endurance:0,Discipline:0},stats:{Vitalite:0,Force:0,Esprit:0,Endurance:0,Discipline:0},dailyLog:{},weeklyLog:{},specialQuests:[],trialCompleted:{}});setConfirmReset(false);setShowSet(false);}},"\u2705 Confirmer"),
+                  h("button",{class:"mbtn mdng",style:"flex:1",onClick:()=>{localStorage.removeItem("sl_v3");setState({...IMPORTED,totalXp:0,streak:0,statXp:{Vitalite:0,Force:0,Esprit:0,Endurance:0,Discipline:0},stats:{Vitalite:0,Force:0,Esprit:0,Endurance:0,Discipline:0},dailyLog:{},weeklyLog:{},specialQuests:[]});setConfirmReset(false);setShowSet(false);}},"\u2705 Confirmer"),
                   h("button",{class:"mbtn mcan",style:"flex:1",onClick:()=>setConfirmReset(false)},"Annuler")
                 )
               )
