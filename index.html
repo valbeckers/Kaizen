@@ -170,6 +170,19 @@ const SP = {
 
 const getRank    = xp => { for(let i=RANKS.length-1;i>=0;i--)if(xp>=RANKS[i].xpRequired)return RANKS[i]; return RANKS[0]; };
 const getNext    = id => { const i=RANKS.findIndex(r=>r.id===id); return i<RANKS.length-1?RANKS[i+1]:null; };
+
+// Progression des objectifs par rang (linéaire E->S)
+const RANK_BASES = {
+  push:    [30, 44, 58,  72,  86,  100],
+  abs:     [60, 88, 116, 144, 172, 200],
+  squats:  [15, 22, 29,  36,  43,  50],
+  reading: [10, 14, 18,  22,  26,  30],
+  run:     [7,  10, 12,  15,  17,  20],
+};
+
+function getRankBase(objId, rankIdx){
+  return RANK_BASES[objId]?.[rankIdx] ?? (DEFS.find(o=>o.id===objId)?.base ?? 0);
+}
 const getTarget  = base => base; // pas de scaling rang pour l'instant
 const todayStr   = () => new Date().toISOString().slice(0,10);
 const wkStr      = () => { const d=new Date(),j=new Date(d.getFullYear(),0,1); return d.getFullYear()+"-W"+Math.ceil(((d-j)/86400000+j.getDay()+1)/7); };
@@ -309,7 +322,7 @@ function App(){
 
   // 7. Quetes journalieres obligatoires toutes faites ?
   const reqDailyObjs  = objs.filter(o=>!o.optional&&o.daily);
-  const allDailyDone  = reqDailyObjs.every(o=>(tLog[o.id]||0)>=o.base);
+  const allDailyDone  = reqDailyObjs.every(o=>(tLog[o.id]||0)>=getRankBase(o.id,ri));
 
   // 8. Streak : calculé depuis dailyLog mais ne descend jamais sous le streak sauvegardé si hier était complet
   const computedStreak = (()=>{
@@ -334,12 +347,12 @@ function App(){
 
   // 9. Bonus hebdo
   const weeklyDone = (()=>{
-    const weeklyOk=objs.filter(o=>!o.optional&&o.weekly).every(o=>(wLog[o.id]||0)>=o.base);
+    const weeklyOk=objs.filter(o=>!o.optional&&o.weekly).every(o=>(wLog[o.id]||0)>=getRankBase(o.id,ri));
     if(!weeklyOk)return false;
     const ws=new Date(); ws.setDate(ws.getDate()-((ws.getDay()+6)%7)); ws.setHours(0,0,0,0);
     const days=Array.from({length:7},(_,i)=>{const d=new Date(ws);d.setDate(ws.getDate()+i);return d.toISOString().slice(0,10);});
     if(days.some(d=>d>today))return false;
-    return reqDailyObjs.every(o=>days.every(d=>(state.dailyLog[d]?.[o.id]||0)>=o.base));
+    return reqDailyObjs.every(o=>days.every(d=>(state.dailyLog[d]?.[o.id]||0)>=getRankBase(o.id,ri)));
   })();
 
   // 10. Quete speciale
@@ -431,8 +444,8 @@ function App(){
     inputs.current[obj.id]="";
     const cur=obj.weekly?(wLog[obj.id]||0):(tLog[obj.id]||0);
     let xp=0;
-    if(obj.binary){const was=cur>=obj.base,now2=(cur+val)>=obj.base; xp=(!was&&now2)?(obj.binaryXp||50):0;}
-    else{const nt=cur+val; if(cur>=obj.base)xp=val*obj.xpPer*1.5; else if(nt<=obj.base)xp=val*obj.xpPer; else{const n=obj.base-cur; xp=n*obj.xpPer+(val-n)*obj.xpPer*1.5;}}
+    if(obj.binary){const was=cur>=getRankBase(obj.id,ri),now2=(cur+val)>=getRankBase(obj.id,ri); xp=(!was&&now2)?(obj.binaryXp||50):0;}
+    else{const nt=cur+val; const b=getRankBase(obj.id,ri); if(cur>=b)xp=val*obj.xpPer*1.5; else if(nt<=b)xp=val*obj.xpPer; else{const n=b-cur; xp=n*obj.xpPer+(val-n)*obj.xpPer*1.5;}}
     setState(s=>{
       if(obj.weekly){const w={...s.weeklyLog};w[wk]={...(w[wk]||{}),[obj.id]:(w[wk]?.[obj.id]||0)+val};return{...s,weeklyLog:w,lastActiveDay:todayStr()};}
       const d={...s.dailyLog};d[today]={...(d[today]||{}),[obj.id]:(d[today]?.[obj.id]||0)+val};return{...s,dailyLog:d,lastActiveDay:todayStr()};
@@ -470,7 +483,7 @@ function App(){
   // ─── SOUS-COMPOSANTS ──────────────────────────────────────────────────
 
   function QI({obj}){
-    const t=obj.base, d=obj.weekly?(wLog[obj.id]||0):(tLog[obj.id]||0);
+    const t=getRankBase(obj.id,ri), d=obj.weekly?(wLog[obj.id]||0):(tLog[obj.id]||0);
     const pct=(d/t)*100, done=d>=t, over=d>t;
     return h("div",{class:"qi "+(done?"done":"")},
       h("div",{class:"qhdr"},
@@ -501,7 +514,7 @@ function App(){
   }
 
   function RR({obj,isW}){
-    const t=obj.base, d=isW?(wLog[obj.id]||0):(tLog[obj.id]||0);
+    const t=getRankBase(obj.id,ri), d=isW?(wLog[obj.id]||0):(tLog[obj.id]||0);
     const pct=Math.min(100,(d/t)*100), done=d>=t, over=d>t;
     return h("div",{style:"display:flex;align-items:center;gap:10px;margin-bottom:8px"},
       h("span",{style:"font-size:16px"},obj.icon),
@@ -703,7 +716,7 @@ function App(){
         h("div",{class:"wgrid"},days.map((d,i)=>{
           const log=state.dailyLog[d]||{};
           const xp=Object.entries(log).reduce((s,[id,a])=>{const o=objs.find(x=>x.id===id);return s+(o?calcXp(o,a):0);},0);
-          const allDone=reqDailyObjs.every(o=>(log[o.id]||0)>=o.base);
+          const allDone=reqDailyObjs.every(o=>(log[o.id]||0)>=getRankBase(o.id,ri));
           const isPast=d<today;
           const rgb=rank.color.replace("#","").match(/../g).map(x=>parseInt(x,16)).join(",");
           const int=xp>100?1:xp>50?.7:xp>10?.4:xp>0?.2:0;
@@ -747,7 +760,7 @@ function App(){
       h("div",{class:"card"},
         h("div",{class:"ctitle",style:"margin-bottom:12px"},"\uD83D\uDCCA Activit\u00e9 de la semaine"),
         ordered.map(obj=>{
-          const val=tots[obj.id]||0, wt=obj.weekly?obj.base:obj.base*7;
+          const val=tots[obj.id]||0, wt=obj.weekly?getRankBase(obj.id,ri):getRankBase(obj.id,ri)*7;
           const pct=Math.min(100,(val/wt)*100), complete=val>=wt, over=val>wt;
           return h("div",{key:obj.id,style:"display:flex;align-items:center;gap:10px;margin-bottom:10px"},
             h("span",{style:"font-size:18px"},obj.icon),
