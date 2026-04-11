@@ -884,7 +884,7 @@ function App(){
                     obj.name,
                     obj.optional&&h("span",{style:"font-size:9px;color:#fbbf24;font-family:Orbitron,sans-serif;border:1px solid #fbbf2455;border-radius:4px;padding:1px 4px"},"BONUS")
                   ),
-                  h("span",{style:"font-family:Orbitron,sans-serif;font-size:10px"},successes+"/"+total+" nuits \u2714\uFE0F")
+                  h("span",{style:"font-family:Orbitron,sans-serif;font-size:10px"},successes+"/"+total+" "+(obj.id==="sleep"?"nuits":"jours"))
                 ),
                 h("div",{class:"qbar"},h("div",{class:"qfill"+(complete?" done":""),style:"width:"+pct+"%;opacity:"+(successes>0?1:0.15)}))
               ),
