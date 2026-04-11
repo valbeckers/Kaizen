@@ -156,7 +156,6 @@ const SP = {
     {id:"sp_stairs", name:"Escaliers",           icon:"\uD83C\uDFD7\uFE0F",unit:"A/R",target:30,xp:300,days:1,desc:"30 mont\u00e9es/descentes non-stop"},
   ],
   Vitalite:[
-    {id:"sp_nosg",   name:"Sans sucre",          icon:"\uD83D\uDEAB",unit:"jour",  target:1,   xp:300,days:1,desc:"Pas de sucres ajout\u00e9s en 24h"},
     {id:"sp_flex30", name:"Souplesse 30min",     icon:"\uD83E\uDD38\uD83C\uDFFB",unit:"min",target:30,xp:300,days:1,desc:"30 min de souplesse en une s\u00e9ance"},
     {id:"sp_noscreen",name:"Pas d'\u00e9cran",   icon:"\uD83D\uDCF5",unit:"jour",  target:1,   xp:150,days:1,desc:"Pas d'\u00e9cran apr\u00e8s 20h"},
     {id:"sp_fasting",name:"Je\u00fbne 16h",      icon:"\u23F3",      unit:"jour",  target:1,   xp:300,days:1,desc:"Je\u00fbne 16h dans la journ\u00e9e"},
@@ -473,7 +472,7 @@ function App(){
       const id2=id1+0.1;
       setFloats(f=>[...f,
         {id:id1,y:"35%",txt:"\uD83C\uDFC6 QU\u00c9TE VALID\u00c9E !"},
-        {id:id2,y:"42%",txt:"+"+sq.xp+" XP"}
+        {id:id2,y:"40%",txt:"+"+sq.xp+" XP"}
       ]);
       setTimeout(()=>setFloats(f=>f.filter(p=>p.id!==id1&&p.id!==id2)),1400);
     }
@@ -944,7 +943,13 @@ function App(){
         h("div",{class:"divider"}),
         h("div",{class:"msec"},
           h("div",{class:"mlbl"},"\uD83D\uDD04 Restaurer les donn\u00e9es sauvegard\u00e9es"),
-          h("button",{class:"mbtn",style:"width:100%;background:#16a34a22;border:1px solid #16a34a88;color:#4ade80",onClick:()=>{localStorage.removeItem("sl_v3");setState(IMPORTED);setShowSet(false);}},"\u21A9 Restaurer les donn\u00e9es")
+          h("button",{class:"mbtn",style:"width:100%;background:#16a34a22;border:1px solid #16a34a88;color:#4ade80",onClick:()=>{
+            localStorage.removeItem("sl_v3");
+            const tpl=pickRandomSq([]);
+            const sq=tpl?{...tpl,sqid:"sq_"+Date.now(),progress:0,startedAt:Date.now(),expiresAt:Date.now()+tpl.days*86400000,completedAt:null}:null;
+            setState({...IMPORTED,specialQuests:sq?[sq]:[]});
+            setShowSet(false);
+          }},"\u21A9 Restaurer les donn\u00e9es")
         ),
         h("div",{class:"divider"}),
         h("div",{class:"msec"},
