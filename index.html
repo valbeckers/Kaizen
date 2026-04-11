@@ -138,28 +138,37 @@ const DEFS = [
 // Quetes speciales — par stat
 const SP = {
   Force:[
-    {id:"sp_dips",   name:"Dips",              icon:"\uD83D\uDCAA",unit:"reps",   target:50,  xp:200,days:1,desc:"50 dips en 24h"},
-    {id:"sp_pull",   name:"Tractions",          icon:"\uD83C\uDFCB\uFE0F",unit:"reps",target:30,xp:300,days:1,desc:"30 tractions en 24h"},
-    {id:"sp_lunge",  name:"Fentes march\u00e9es",icon:"\uD83E\uDDB5",unit:"pas",  target:100, xp:200,days:1,desc:"100 pas de fentes en 24h"},
-    {id:"sp_plank",  name:"Gainage",            icon:"\uD83D\uDCAA",unit:"min",   target:10,  xp:150,days:1,desc:"10 min cumul\u00e9es en 24h"},
-    {id:"sp_200push",name:"200 pompes",         icon:"\uD83E\uDDBE",unit:"reps",  target:200, xp:350,days:1,desc:"200 pompes en une s\u00e9ance"},
+    {id:"sp_dips",    name:"Dips",               icon:"\uD83D\uDCAA",           unit:"reps", target:50,  xp:200, days:1, desc:"50 dips en 24h"},
+    {id:"sp_pull",    name:"Tractions",           icon:"\uD83C\uDFCB\uFE0F",    unit:"reps", target:30,  xp:300, days:1, desc:"30 tractions en 24h"},
+    {id:"sp_lunge",   name:"Fentes march\u00e9es",icon:"\uD83E\uDDB5",          unit:"pas",  target:100, xp:200, days:1, desc:"100 pas de fentes en 24h"},
+    {id:"sp_plank",   name:"Gainage",             icon:"\uD83D\uDCAA",           unit:"min",  target:10,  xp:150, days:1, desc:"10 min cumul\u00e9es en 24h"},
+    {id:"sp_200push", name:"200 pompes",           icon:"\uD83E\uDDBE",          unit:"reps", target:200, xp:350, days:1, desc:"200 pompes en une s\u00e9ance"},
+    {id:"sp_wallsit", name:"Wall sit",             icon:"\uD83E\uDDF1",          unit:"min",  target:10,  xp:200, days:1, desc:"10 min cumul\u00e9es en 24h"},
   ],
   Esprit:[
-    {id:"sp_pod",   name:"Podcast",             icon:"\uD83C\uDF99\uFE0F",unit:"\u00e9p.",target:1,xp:100,days:1,desc:"1 podcast complet en 24h"},
-    {id:"sp_50p",   name:"50 pages",            icon:"\uD83D\uDCDA",unit:"pages", target:50,  xp:250,days:1,desc:"50 pages en une journ\u00e9e"},
-    {id:"sp_med20", name:"M\u00e9ditation 20min",icon:"\uD83E\uDDD8\uD83C\uDFFB",unit:"min",target:20,xp:150,days:1,desc:"20 min en une s\u00e9ance"},
+    {id:"sp_pod",     name:"Podcast",             icon:"\uD83C\uDF99\uFE0F",    unit:"\u00e9p.", target:1, xp:100, days:1, desc:"1 podcast complet en 24h", binary:true},
+    {id:"sp_50p",     name:"50 pages",             icon:"\uD83D\uDCDA",          unit:"pages",target:50,  xp:250, days:1, desc:"50 pages en une journ\u00e9e"},
+    {id:"sp_med20",   name:"M\u00e9ditation 20min",icon:"\uD83E\uDDD8\uD83C\uDFFB",unit:"min",target:20, xp:150, days:1, desc:"20 min en une s\u00e9ance"},
+    {id:"sp_nopassif",name:"0 contenu passif",     icon:"\uD83D\uDEAB",          unit:"jour", target:1,   xp:300, days:1, desc:"Z\u00e9ro scroll/r\u00e9seaux en 24h", binary:true},
+    {id:"sp_silence", name:"Mode silence",          icon:"\uD83E\uDD2B",          unit:"min",  target:30,  xp:300, days:1, desc:"30 min sans parler ni consommer", binary:true},
   ],
   Endurance:[
-    {id:"sp_jump",   name:"Corde \u00e0 sauter", icon:"\uD83E\uDE62",unit:"min",     target:20, xp:250,days:1,desc:"20 min non-stop"},
-    {id:"sp_sprint", name:"Sprints",             icon:"\u26A1",      unit:"s\u00e9ries",target:10,xp:300,days:1,desc:"10 x 100m sprint/r\u00e9cup"},
-    {id:"sp_5km",    name:"5km d'une traite",    icon:"\uD83C\uDFC3\uD83C\uDFFB",unit:"km",target:5,xp:300,days:1,desc:"5km sans s'arr\u00eater"},
-    {id:"sp_stairs", name:"Escaliers",           icon:"\uD83C\uDFD7\uFE0F",unit:"A/R",target:30,xp:300,days:1,desc:"30 mont\u00e9es/descentes non-stop"},
+    {id:"sp_jump",    name:"Corde \u00e0 sauter",  icon:"\uD83E\uDE62",          unit:"min",  target:20,  xp:250, days:1, desc:"20 min non-stop"},
+    {id:"sp_sprint",  name:"Sprints",              icon:"\u26A1",                unit:"s\u00e9ries",target:10,xp:300,days:1,desc:"10 x 100m sprint/r\u00e9cup"},
+    {id:"sp_5km",     name:"5km d'une traite",     icon:"\uD83C\uDFC3\uD83C\uDFFB",unit:"km",target:5,   xp:300, days:1, desc:"5km sans s'arr\u00eater", binary:true},
+    {id:"sp_stairs",  name:"Escaliers",             icon:"\uD83C\uDFD7\uFE0F",   unit:"A/R",  target:30,  xp:300, days:1, desc:"30 mont\u00e9es/descentes non-stop"},
+    {id:"sp_walk",    name:"Marche 30 min",         icon:"\uD83D\uDEB6",          unit:"jour", target:1,   xp:200, days:1, desc:"30 min de marche", binary:true},
+    {id:"sp_burpees", name:"Burpees",               icon:"\uD83D\uDD25",          unit:"reps", target:100, xp:300, days:1, desc:"100 burpees en 24h"},
   ],
   Vitalite:[
-    {id:"sp_flex30", name:"Souplesse 30min",     icon:"\uD83E\uDD38\uD83C\uDFFB",unit:"min",target:30,xp:300,days:1,desc:"30 min de souplesse en une s\u00e9ance"},
-    {id:"sp_noscreen",name:"Pas d'\u00e9cran",   icon:"\uD83D\uDCF5",unit:"jour",  target:1,   xp:150,days:1,desc:"Pas d'\u00e9cran apr\u00e8s 20h"},
-    {id:"sp_fasting",name:"Je\u00fbne 16h",      icon:"\u23F3",      unit:"jour",  target:1,   xp:300,days:1,desc:"Je\u00fbne 16h dans la journ\u00e9e"},
-    {id:"sp_fruits", name:"5 fruits/l\u00e9gumes",icon:"\uD83E\uDD57",unit:"fruit/l\u00e9gume", target:5, xp:200,days:1,desc:"Manger 5 fruits et l\u00e9gumes"},
+    {id:"sp_flex30",  name:"Souplesse 30min",       icon:"\uD83E\uDD38\uD83C\uDFFB",unit:"min",target:30, xp:300, days:1, desc:"30 min de souplesse en une s\u00e9ance"},
+    {id:"sp_noscreen",name:"Pas d'\u00e9cran",       icon:"\uD83D\uDCF5",         unit:"jour", target:1,   xp:150, days:1, desc:"Pas d'\u00e9cran apr\u00e8s 20h", binary:true},
+    {id:"sp_fasting", name:"Je\u00fbne 16h",         icon:"\u23F3",               unit:"jour", target:1,   xp:300, days:1, desc:"Je\u00fbne 16h dans la journ\u00e9e", binary:true},
+    {id:"sp_fruits",  name:"5 fruits/l\u00e9gumes",  icon:"\uD83E\uDD57",         unit:"fruit/l\u00e9gume",target:5,xp:200,days:1,desc:"Manger 5 fruits et l\u00e9gumes"},
+    {id:"sp_breath",  name:"Coh\u00e9rence cardiaque",icon:"\uD83D\uDC9A",        unit:"min",  target:10,  xp:200, days:1, desc:"10 min de respiration contr\u00f4l\u00e9e"},
+    {id:"sp_nojunk",  name:"Pas de junk-food",       icon:"\uD83C\uDF55",         unit:"jour", target:1,   xp:100, days:1, desc:"Z\u00e9ro junk-food en 24h", binary:true},
+    {id:"sp_sun",     name:"Lumi\u00e8re naturelle",  icon:"\u2600\uFE0F",         unit:"min",  target:10,  xp:200, days:1, desc:"10 min de lumi\u00e8re naturelle"},
+    {id:"sp_cold",    name:"Douche froide",           icon:"\uD83D\uDEBF",         unit:"jour", target:1,   xp:100, days:1, desc:"Finir par 30 sec d'eau froide", binary:true},
   ],
 };
 
@@ -592,6 +601,21 @@ function App(){
     const remaining=sq.expiresAt-now;
     const urgent=remaining<86400000&&!sq.completedAt;
     const pct=Math.min(100,(sq.progress/sq.target)*100);
+    const done=sq.progress>=sq.target;
+
+    function completeBinary(val,e){
+      if(sq.progress>=sq.target)return;
+      const nowComplete=val>=1;
+      if(nowComplete){
+        const id1=Date.now()+Math.random(), id2=id1+0.1;
+        setFloats(f=>[...f,{id:id1,y:"35%",txt:"\uD83C\uDFC6 QU\u00c9TE VALID\u00c9E !"},{id:id2,y:"40%",txt:"+"+sq.xp+" XP"}]);
+        setTimeout(()=>setFloats(f=>f.filter(p=>p.id!==id1&&p.id!==id2)),1400);
+        addXp(sq.xp,sq.stat,null,true);
+      }
+      setState(s=>({...s,specialQuests:s.specialQuests.map(q=>q.sqid===sq.sqid
+        ?{...q,progress:val,completedAt:nowComplete?Date.now():q.completedAt}:q)}));
+    }
+
     return h("div",{class:"sqcard"+(urgent?" sq-urgent":"")},
       h("div",{style:"display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px"},
         h("div",{style:"display:flex;align-items:center;gap:8px"},
@@ -611,10 +635,18 @@ function App(){
         h("span",null,sq.progress+"/"+sq.target+" "+sq.unit),
         h("span",{style:"color:#ef4444;font-family:Orbitron,sans-serif"},"+"+sq.xp+" XP \u00b7 "+(STAT_LBL[sq.stat]||sq.stat))
       ),
-      showInput&&h("div",{class:"qinrow",style:"margin-top:8px"},
-        h("input",{id:"sqi_"+sq.sqid,class:"qin",type:"text",inputMode:"decimal",placeholder:"+ "+sq.unit,style:"border-color:#ef444466"}),
-        h("button",{class:"qbtn",style:"border-color:#ef444466;color:#ef4444",onClick:e=>progressSq(sq,e)},"+XP")
-      )
+      showInput&&!done&&(
+        sq.binary
+          ?h("div",{style:"display:flex;gap:8px;margin-top:8px"},
+              h("button",{onClick:e=>completeBinary(0,e),style:"flex:1;padding:10px;border-radius:8px;border:1px solid #ef444444;background:rgba(255,255,255,0.03);color:#ef4444;font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer;letter-spacing:1px"},"\u274C \u00c9chec"),
+              h("button",{onClick:e=>completeBinary(1,e),style:"flex:1;padding:10px;border-radius:8px;border:1px solid #4ade8044;background:rgba(255,255,255,0.03);color:#4ade80;font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer;letter-spacing:1px"},"\u2705 Succ\u00e8s")
+            )
+          :h("div",{class:"qinrow",style:"margin-top:8px"},
+              h("input",{id:"sqi_"+sq.sqid,class:"qin",type:"text",inputMode:"decimal",placeholder:"+ "+sq.unit,style:"border-color:#ef444466"}),
+              h("button",{class:"qbtn",style:"border-color:#ef444466;color:#ef4444",onClick:e=>progressSq(sq,e)},"+XP")
+            )
+      ),
+      done&&showInput&&h("div",{style:"text-align:center;padding:8px 0;font-size:12px;color:#4ade80;font-family:Orbitron,sans-serif"},"\u2705 Compl\u00e9t\u00e9e !")
     );
   }
 
