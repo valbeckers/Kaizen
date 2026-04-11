@@ -185,7 +185,15 @@ function getRankBase(objId, rankIdx){
 }
 const getTarget  = base => base; // pas de scaling rang pour l'instant
 const todayStr   = () => new Date().toISOString().slice(0,10);
-const wkStr      = () => { const d=new Date(),j=new Date(d.getFullYear(),0,1); return d.getFullYear()+"-W"+Math.ceil(((d-j)/86400000+j.getDay()+1)/7); };
+const wkStr      = (d=new Date()) => {
+  // Semaine ISO : commence le lundi
+  const dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+  const day=dt.getUTCDay()||7; // dimanche=7
+  dt.setUTCDate(dt.getUTCDate()+4-day); // jeudi de la semaine ISO
+  const yearStart=new Date(Date.UTC(dt.getUTCFullYear(),0,1));
+  const wk=Math.ceil(((dt-yearStart)/86400000+1)/7);
+  return dt.getUTCFullYear()+"-W"+String(wk).padStart(2,"0");
+};
 const sortStat   = arr => [...arr].sort((a,b)=>STATS.indexOf(a.stat)-STATS.indexOf(b.stat));
 const xpForLvl   = l => Math.round(100*Math.pow(2,l));
 const totForLvl  = l => { let t=0; for(let i=0;i<l;i++)t+=xpForLvl(i); return t; };
@@ -716,7 +724,9 @@ function App(){
         h("div",{class:"wgrid"},days.map((d,i)=>{
           const log=state.dailyLog[d]||{};
           const xp=Object.entries(log).reduce((s,[id,a])=>{const o=objs.find(x=>x.id===id);return s+(o?calcXp(o,a):0);},0);
-          const allDone=reqDailyObjs.every(o=>(log[o.id]||0)>=getRankBase(o.id,ri));
+          const allDone=d===today
+            ?reqDailyObjs.every(o=>(log[o.id]||0)>=getTarget(o.base))
+            :reqDailyObjs.every(o=>(log[o.id]||0)>0);
           const isPast=d<today;
           const rgb=rank.color.replace("#","").match(/../g).map(x=>parseInt(x,16)).join(",");
           const int=xp>100?1:xp>50?.7:xp>10?.4:xp>0?.2:0;
