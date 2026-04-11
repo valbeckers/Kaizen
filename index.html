@@ -111,11 +111,11 @@ const { useState, useEffect, useRef } = preactHooks;
 
 const RANKS = [
   {id:"E",label:"\u00c9veill\u00e9",  color:"#9ca3af",glow:"#9ca3af55",bg:"#0a0a0f",accent:"#6b7280",xpRequired:0},
-  {id:"D",label:"Aventurier",color:"#22d3ee",glow:"#22d3ee55",bg:"#0a0a0f",accent:"#06b6d4",xpRequired:3000},
-  {id:"C",label:"Combattant",color:"#4ade80",glow:"#4ade8055",bg:"#0a0a0f",accent:"#22c55e",xpRequired:9000},
-  {id:"B",label:"Chasseur",  color:"#f59e0b",glow:"#f59e0b55",bg:"#0a0a0f",accent:"#d97706",xpRequired:21000},
-  {id:"A",label:"Expert",    color:"#f87171",glow:"#f87171aa",bg:"#0a0a0f",accent:"#ef4444",xpRequired:45000},
-  {id:"S",label:"Ma\u00eetre",color:"#c084fc",glow:"#c084fcaa",bg:"#0a0a0f",accent:"#a855f7",xpRequired:93000},
+  {id:"D",label:"Disciple",   color:"#22d3ee",glow:"#22d3ee55",bg:"#0a0a0f",accent:"#06b6d4",xpRequired:3000},
+  {id:"C",label:"Combattant", color:"#4ade80",glow:"#4ade8055",bg:"#0a0a0f",accent:"#22c55e",xpRequired:9000},
+  {id:"B",label:"Briseur",    color:"#f59e0b",glow:"#f59e0b55",bg:"#0a0a0f",accent:"#d97706",xpRequired:21000},
+  {id:"A",label:"Ascendant",  color:"#f87171",glow:"#f87171aa",bg:"#0a0a0f",accent:"#ef4444",xpRequired:45000},
+  {id:"S",label:"Souverain",  color:"#c084fc",glow:"#c084fcaa",bg:"#0a0a0f",accent:"#a855f7",xpRequired:93000},
 ];
 
 const STATS      = ["Vitalite","Force","Esprit","Endurance","Discipline"];
@@ -683,7 +683,9 @@ function App(){
         h("div",{style:"display:grid;grid-template-columns:1fr 1px 1fr;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06)"},
           h("div",{style:"text-align:center"},
             h("div",{style:"font-family:Orbitron,sans-serif;font-size:16px;font-weight:700;color:var(--rc)"},"\uD83D\uDD25 "+state.streak),
-            h("div",{style:"font-size:10px;color:var(--td);text-transform:uppercase;letter-spacing:1px;margin-top:2px"},"Streak")
+            h("div",{style:"font-size:10px;color:var(--td);text-transform:uppercase;letter-spacing:1px;margin-top:2px"},"Streak"),
+            bonusGiven&&h("div",{style:"font-size:10px;color:#c084fc;font-family:Orbitron,sans-serif;margin-top:3px"},"+100 XP quotidien \u2705"),
+            weeklyBonusGiven&&h("div",{style:"font-size:10px;color:#c084fc;font-family:Orbitron,sans-serif;margin-top:2px"},"+150 XP hebdo \u2705")
           ),
           h("div",{style:"width:1px;height:32px;background:rgba(255,255,255,0.06)"}),
           h("div",{style:"text-align:center"},
@@ -691,11 +693,6 @@ function App(){
             h("div",{style:"font-size:10px;color:var(--td);text-transform:uppercase;letter-spacing:1px;margin-top:2px"},"XP du jour")
           )
         )
-      ),
-      bonusGiven&&h("div",{class:"card",style:"border:1px solid #a855f788;background:#a855f708;text-align:center;padding:12px"},
-        h("div",{style:"font-size:11px;color:#c084fc;font-family:Orbitron,sans-serif;letter-spacing:2px;margin-bottom:4px"},"\uD83D\uDC9C BONUS STREAK ACCORD\u00c9"),
-        h("div",{style:"font-size:22px;font-family:Orbitron,sans-serif;font-weight:900;color:#c084fc"},"+100 XP Discipline"),
-        weeklyBonusGiven&&h("div",{style:"font-size:11px;color:#c084fc88;margin-top:6px;font-family:Orbitron,sans-serif"},"\uD83D\uDCC5 Bonus hebdo +150 XP accord\u00e9 \u2705")
       ),
       activeSq&&h("div",{class:"card",style:"border-color:#ef444444"},
         h("div",{class:"ctitle",style:"color:#ef4444;margin-bottom:8px"},"\uD83D\uDEA8 Qu\u00eate urgente"),
