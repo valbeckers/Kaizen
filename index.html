@@ -190,7 +190,7 @@ function getRankBase(objId, rankIdx){
   return RANK_BASES[objId]?.[rankIdx] ?? (DEFS.find(o=>o.id===objId)?.base ?? 0);
 }
 const getTarget  = base => base; // pas de scaling rang pour l'instant
-const todayStr   = () => new Date().toISOString().slice(0,10);
+const todayStr   = () => { const d=new Date(); const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0"); return y+"-"+m+"-"+day; };
 const wkStr      = (d=new Date()) => {
   // Semaine ISO : commence le lundi
   const dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
@@ -839,11 +839,13 @@ function App(){
   // ─── ONGLET HISTORIQUE ────────────────────────────────────────────────
 
   function History(){
+    function localDate(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");return y+"-"+m+"-"+day;}
     function getWS(off){const d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7)-off*7);d.setHours(0,0,0,0);return d;}
-    function getWK(ws){const j=new Date(ws.getFullYear(),0,1);return ws.getFullYear()+"-W"+Math.ceil(((ws-j)/86400000+j.getDay()+1)/7);}
-    const ws=getWS(wkOff), wKey=getWK(ws);
+    const ws=getWS(wkOff);
+    const weekDays=Array.from({length:7},(_,i)=>{const d=new Date(ws);d.setDate(ws.getDate()+i);return localDate(d);});
+    const wKey=wkStr(ws);
     const dt={};
-    for(let i=0;i<7;i++){const d=new Date(ws);d.setDate(ws.getDate()+i);const dk=d.toISOString().slice(0,10);Object.entries(state.dailyLog[dk]||{}).forEach(([id,v])=>{dt[id]=(dt[id]||0)+v;});}
+    weekDays.forEach(dk=>Object.entries(state.dailyLog[dk]||{}).forEach(([id,v])=>{dt[id]=(dt[id]||0)+v;}));
     const tots={...dt,...(state.weeklyLog[wKey]||{})};
     const we=new Date(ws); we.setDate(ws.getDate()+6);
     const fmt=d=>d.getDate().toString().padStart(2,"0")+"/"+(d.getMonth()+1).toString().padStart(2,"0");
