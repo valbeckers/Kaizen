@@ -156,7 +156,7 @@ Endurance:[
 {id:"sp_jump", name:"Corde \u00e0 sauter", icon:"\uD83E\uDE62", unit:"min", target:20, xp:250, days:1, desc:"20 min non-stop"},
 {id:"sp_sprint", name:"Sprints", icon:"\u26A1", unit:"s\u00e9ries",target:10,xp:300,days:1,desc:"10 x 100m sprint/r\u00e9cup"},
 {id:"sp_5km", name:"5km d'une traite", icon:"\uD83C\uDFC3\uD83C\uDFFB",unit:"km",target:5, xp:300, days:1, desc:"5km sans s'arr\u00eater", binary:true},
-{id:"sp_stairs", name:"Escaliers", icon:"\uD83C\uDFD7\uFE0F", unit:"A/R", target:30, xp:300, days:1, desc:"30 mont\u00e9es/descentes non-stop"},
+{id:"sp_stairs", name:"Escaliers", icon:"\uD83C\uDFD7\uFE0F", unit:"A/R", target:30, xp:300, days:1, desc:"30 mont\u00e9es/descentes"},
 {id:"sp_walk", name:"Marche 30 min", icon:"\uD83D\uDEB6", unit:"jour", target:1, xp:200, days:1, desc:"30 min de marche", binary:true},
 {id:"sp_burpees", name:"Burpees", icon:"\uD83D\uDD25", unit:"reps", target:100, xp:300, days:1, desc:"100 burpees en 24h"},
 {id:"sp_calves", name:"Extensions mollets", icon:"\uD83E\uDDB5", unit:"reps", target:100, xp:200, days:1, desc:"100 extensions de mollets"},
@@ -234,7 +234,7 @@ const saveState = s => { try{ localStorage.setItem("sl_v3",JSON.stringify(s)); }
 // ─── DONNEES IMPORTEES ─────────────────────────────────────────────────────
 
 const IMPORTED = {
-totalXp:6086, streak:6, lastActiveDay:"2026-04-13",
+totalXp:6321, streak:6, lastActiveDay:"2026-04-13",
 streakBonusDay:"2026-04-12", weeklyBonusWk:"2026-W15", lastStreakDay:"2026-04-12",
 streakMilestones:[5],
 dailyLog:{
@@ -245,12 +245,12 @@ dailyLog:{
 "2026-04-10":{water:13,sleep:1,push:77,abs:110,squats:40,reading:14,flex:5,med:20},
 "2026-04-11":{water:10,push:45,sleep:1,abs:130,flex:3,squats:25,reading:32,nosugar:1},
 "2026-04-12":{water:8,sleep:1,reading:29,push:64,abs:99,squats:37,flex:3,nosugar:1},
-"2026-04-13":{water:4,push:45,sleep:1,abs:110}
+"2026-04-13":{water:10,push:45,sleep:1,abs:110}
 },
-weeklyLog:{"2026-W16":{run:13}},
+weeklyLog:{"2026-W15":{run:13},"2026-W16":{}},
 stats:{Vitalite:4,Force:4,Esprit:3,Endurance:3,Discipline:3},
-statXp:{Vitalite:1550,Force:1751,Esprit:1135,Endurance:800,Discipline:850},
-specialQuests:[{id:"sp_wallsit",name:"Wall sit",icon:"\uD83E\uDDF1",unit:"min",target:10,xp:200,days:1,desc:"10 min cumul\u00e9es en 24h",stat:"Force",sqid:"sq_1775991205731",progress:6.75,startedAt:1775991205731,expiresAt:1776077605731,completedAt:null}],
+statXp:{Vitalite:1585,Force:1951,Esprit:1135,Endurance:800,Discipline:850},
+specialQuests:[{id:"sp_stairs",name:"Escaliers",icon:"\uD83C\uDFD7\uFE0F",unit:"A/R",target:30,xp:300,days:1,desc:"30 mont\u00e9es/descentes",stat:"Endurance",sqid:"sq_1776077146539",progress:0,startedAt:1776077146540,expiresAt:1776163546540,completedAt:null}],
 objectives:DEFS,
 };
 
