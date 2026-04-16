@@ -17,7 +17,7 @@ html,body{height:100%;background:#0a0a0f;color:var(--tx);font-family:'Rajdhani',
 .particles{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden}
 .particle{position:absolute;border-radius:50%;animation:floatP linear infinite}
 @keyframes floatP{0%{transform:translateY(100vh) scale(0);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateY(-100px) scale(1);opacity:0}}
-.hdr{position:sticky;top:0;z-index:100;background:#0a0a0f;padding:54px 20px 12px}
+.hdr{position:sticky;top:0;z-index:100;background:#0a0a0f;padding:54px 20px 12px 32px}
 .hdr-top{display:flex;justify-content:space-between;align-items:center}
 .pname{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;color:var(--rc);text-shadow:0 0 20px var(--rg);letter-spacing:3px}
 .gbtn{background:none;border:none;width:43px;height:43px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px;color:var(--rc);opacity:.8}
@@ -718,7 +718,7 @@ h("div",{style:"display:grid;grid-template-columns:1fr 1fr 1fr;align-items:cente
 h("div",{style:"display:flex;align-items:center;gap:10px"},
 h("div",{style:"font-family:Orbitron,sans-serif;font-size:36px;font-weight:900;color:var(--rc);text-shadow:0 0 20px var(--rg);line-height:1"},rank.id),
 h("div",null,
-h("div",{style:"font-family:Orbitron,sans-serif;font-size:13px;font-weight:700;color:var(--rc)"},rank.label),
+h("div",{style:"font-family:Orbitron,sans-serif;font-size:13px;font-weight:700;color:var(--rc);text-shadow:0 0 12px var(--rg)"},rank.label),
 h("div",{style:"font-size:10px;color:var(--td);letter-spacing:1px;text-transform:uppercase;margin-top:2px"},"Rang actuel")
 )
 ),
@@ -878,7 +878,7 @@ if((state.dailyLog[dk]?.[o.id]||0)>0){lastDone=i;break;}
 if(lastDone===null||lastDone>=3){
 const days=lastDone===null?30:lastDone;
 const urgency=days>=15?"#ef4444":days>=10?"#f59e0b":days>=7?"#fbbf24":"#94a3b8";
-const msg=days>=15?"\uD83D\uDD34 "+days+" jours sans "+o.name+" !":days>=10?"\u26A0\uFE0F "+days+" jours sans "+o.name:days>=7?"\uD83D\uDCA4 "+o.name+" oubli\u00e9e depuis "+days+" jours":"�� "+o.name+" pas faite depuis "+days+" jours";
+const msg=days>=15?days+" jours sans "+o.name+" !":days>=10?days+" jours sans "+o.name:days>=7?o.name+" oubli\u00e9e depuis "+days+" jours":o.name+" pas faite depuis "+days+" jours";
 suggestions.push({obj:o,days,msg,urgency});
 }
 });
@@ -970,14 +970,14 @@ ordered.every(o=>!(tots[o.id]>0))&&h("div",{style:"text-align:center;font-size:1
 // Records personnels
 h("div",{class:"card"},
 h("div",{class:"ctitle"},"\uD83C\uDFC6 Records personnels"),
-objs.filter(o=>!o.binary).map(o=>{
+[...sortStat(objs.filter(o=>o.daily&&!o.optional&&!o.binary)),...sortStat(objs.filter(o=>o.daily&&o.optional&&!o.binary)),...sortStat(objs.filter(o=>o.weekly&&!o.binary))].map(o=>{
 const rec=records[o.id];
 if(!rec)return h("div",{key:o.id,style:"display:flex;align-items:center;gap:10px;margin-bottom:8px;opacity:.4"},
 h("span",{style:"font-size:16px"},o.icon),
 h("div",{style:"flex:1;font-size:12px;color:var(--td)"},o.name),
 h("span",{style:"font-size:11px;color:var(--td)"},"—")
 );
-const fmt2=d=>{if(d.includes("-W"))return d;const p=d.split("-");return p[2]+"/"+p[1];};
+const fmt2=d=>{if(d.includes("-W"))return d.replace("-W","-S");const p=d.split("-");return p[2]+"/"+p[1];};
 return h("div",{key:o.id,style:"display:flex;align-items:center;gap:10px;margin-bottom:8px"},
 h("span",{style:"font-size:16px"},o.icon),
 h("div",{style:"flex:1"},
