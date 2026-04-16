@@ -111,9 +111,9 @@ const { useState, useEffect, useRef } = preactHooks;
 const RANKS = [
 {id:"E",label:"\u00c9veill\u00e9", color:"#9ca3af",glow:"#9ca3af55",bg:"#0a0a0f",accent:"#6b7280",xpRequired:0},
 {id:"D",label:"Disciple", color:"#22d3ee",glow:"#22d3ee55",bg:"#0a0a0f",accent:"#06b6d4",xpRequired:3000},
-{id:"C",label:"Combattant", color:"#4ade80",glow:"#4ade8055",bg:"#0a0a0f",accent:"#22c55e",xpRequired:9000},
+{id:"C",label:"Catalyseur", color:"#4ade80",glow:"#4ade8055",bg:"#0a0a0f",accent:"#22c55e",xpRequired:9000},
 {id:"B",label:"Briseur", color:"#f59e0b",glow:"#f59e0b55",bg:"#0a0a0f",accent:"#d97706",xpRequired:21000},
-{id:"A",label:"Ascendant", color:"#f87171",glow:"#f87171aa",bg:"#0a0a0f",accent:"#ef4444",xpRequired:45000},
+{id:"A",label:"Ascendant", color:"#ec4899",glow:"#ec489988",bg:"#0a0a0f",accent:"#db2777",xpRequired:45000},
 {id:"S",label:"Souverain", color:"#c084fc",glow:"#c084fcaa",bg:"#0a0a0f",accent:"#a855f7",xpRequired:93000},
 ];
 
@@ -534,7 +534,7 @@ if(d>0)return d+"j "+hh+"h"; if(hh>0)return hh+"h "+mm+"min"; return mm+"min";
 
 function QI({obj}){
 const t=getRankBase(obj.id,ri), d=obj.weekly?(wLog[obj.id]||0):(tLog[obj.id]||0);
-const done=d>=1;
+const done=obj.binary?(d>=1):(d>=t);
 
 // Quêtes binaires : boutons Échec / Succès
 if(obj.binary){
