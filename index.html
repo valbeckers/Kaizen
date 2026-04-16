@@ -790,8 +790,6 @@ wkq.length>0&&h("div",{class:"card"},h("div",{class:"ctitle"},"\uD83D\uDCC5 Qu\u
 // ─── ONGLET STATS ─────────────────────────────────────────────────────
 
 function Stats(){
-const days=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(6-i));return d.toISOString().slice(0,10);});
-const dlbls=days.map(d=>["D","L","M","M","J","V","S"][new Date(d).getDay()]);
 return h("div",{class:"tab"},
 h("div",{class:"card"},
 h("div",{class:"ctitle"},"Chemin vers le rang S"),
@@ -824,23 +822,6 @@ h("div",{class:"schb"},h("div",{class:"schf",style:"width:"+pct+"%;background:li
 h("div",{style:"font-size:9px;color:var(--td);margin-top:2px;font-family:Orbitron,sans-serif"},Math.round(xpIn)+"/"+xpNeed+" XP vers niveau "+(lvl+1))
 );
 })
-),
-h("div",{class:"card"},
-h("div",{class:"ctitle"},"Activit\u00e9 (7 derniers jours)"),
-h("div",{class:"wgrid"},days.map((d,i)=>{
-const log=state.dailyLog[d]||{};
-const xp=Object.entries(log).reduce((s,[id,a])=>{const o=objs.find(x=>x.id===id);return s+(o?calcXp(o,a):0);},0);
-const allDone=d===today
-?reqDailyObjs.every(o=>(log[o.id]||0)>=getTarget(o.base))
-:reqDailyObjs.every(o=>(log[o.id]||0)>0);
-const isPast=d<today;
-const border=allDone?"2px solid #4ade80":isPast&&xp>0?"2px solid #ef4444":d===today?"1px solid "+rank.color:"1px solid #ffffff18";
-const shadow=allDone?"0 0 6px #4ade8066":isPast&&xp>0?"0 0 6px #ef444466":"";
-return h("div",{key:d,class:"wday"},
-h("div",{class:"wdlbl"},dlbls[i]),
-h("div",{class:"wddot",style:"background:#0a0a0f;border:"+border+(shadow?";box-shadow:"+shadow:"")},"")
-);
-}))
 )
 );
 }
@@ -860,7 +841,71 @@ const we=new Date(ws); we.setDate(ws.getDate()+6);
 const fmt=d=>d.getDate().toString().padStart(2,"0")+"/"+(d.getMonth()+1).toString().padStart(2,"0");
 const lbl=wkOff===0?"Cette semaine":wkOff===1?"Semaine derni\u00e8re":fmt(ws)+" \u2013 "+fmt(we);
 const ordered=[...sortStat(objs.filter(o=>o.daily&&!o.optional)),...sortStat(objs.filter(o=>o.daily&&o.optional)),...sortStat(objs.filter(o=>o.weekly))];
+
+// ── 7 derniers jours ──
+const last7=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(6-i));return localDate(d);});
+const last7lbls=last7.map(d=>["D","L","M","M","J","V","S"][new Date(d).getDay()]);
+
+// ── Records personnels (max par quête sur tout le dailyLog) ──
+const records={};
+Object.entries(state.dailyLog).forEach(([date,log])=>{
+Object.entries(log).forEach(([id,val])=>{
+if(!records[id]||val>records[id].val)records[id]={val,date};
+});
+});
+// weekly records
+Object.entries(state.weeklyLog).forEach(([wk,log])=>{
+Object.entries(log).forEach(([id,val])=>{
+if(!records[id]||val>records[id].val)records[id]={val,date:wk};
+});
+});
+
+// ── Suggestions intelligentes (quêtes bonus non faites depuis X jours) ──
+const suggestions=[];
+objs.filter(o=>o.optional&&o.daily&&!o.binary).forEach(o=>{
+let lastDone=null;
+for(let i=0;i<30;i++){
+const d=new Date();d.setDate(d.getDate()-i);
+const dk=localDate(d);
+if((state.dailyLog[dk]?.[o.id]||0)>0){lastDone=i;break;}
+}
+if(lastDone===null||lastDone>=3){
+const days=lastDone===null?30:lastDone;
+const urgency=days>=15?"#ef4444":days>=10?"#f59e0b":days>=7?"#fbbf24":"#94a3b8";
+const msg=days>=15?"\uD83D\uDD34 "+days+" jours sans "+o.name+" !":days>=10?"\u26A0\uFE0F "+days+" jours sans "+o.name:days>=7?"\uD83D\uDCA4 "+o.name+" oubli\u00e9e depuis "+days+" jours":"�� "+o.name+" pas faite depuis "+days+" jours";
+suggestions.push({obj:o,days,msg,urgency});
+}
+});
+suggestions.sort((a,b)=>b.days-a.days);
+
 return h("div",{class:"tab"},
+// Suggestions
+suggestions.length>0&&h("div",{class:"card",style:"border-color:#ffffff22"},
+h("div",{class:"ctitle",style:"margin-bottom:8px"},"\uD83D\uDCA1 Suggestions"),
+suggestions.map(({obj,msg,urgency})=>h("div",{key:obj.id,style:"display:flex;align-items:center;gap:10px;margin-bottom:8px;last-child:{margin-bottom:0}"},
+h("span",{style:"font-size:16px"},obj.icon),
+h("span",{style:"font-size:12px;color:"+urgency},msg)
+))
+),
+// 7 derniers jours
+h("div",{class:"card"},
+h("div",{class:"ctitle"},"Activit\u00e9 (7 derniers jours)"),
+h("div",{class:"wgrid"},last7.map((d,i)=>{
+const log=state.dailyLog[d]||{};
+const xp=Object.entries(log).reduce((s,[id,a])=>{const o=objs.find(x=>x.id===id);return s+(o?calcXp(o,a):0);},0);
+const allDone=d===today
+?reqDailyObjs.every(o=>(log[o.id]||0)>=getTarget(o.base))
+:reqDailyObjs.every(o=>(log[o.id]||0)>0);
+const isPast=d<today;
+const border=allDone?"2px solid #4ade80":isPast&&xp>0?"2px solid #ef4444":d===today?"1px solid "+rank.color:"1px solid #ffffff18";
+const shadow=allDone?"0 0 6px #4ade8066":isPast&&xp>0?"0 0 6px #ef444466":"";
+return h("div",{key:d,class:"wday"},
+h("div",{class:"wdlbl"},last7lbls[i]),
+h("div",{class:"wddot",style:"background:#0a0a0f;border:"+border+(shadow?";box-shadow:"+shadow:"")})
+);
+}))
+),
+// Navigation semaine
 h("div",{class:"card",style:"padding:12px 16px"},
 h("div",{style:"display:flex;align-items:center;justify-content:space-between;gap:8px"},
 h("button",{style:"background:var(--sf2);border:1px solid var(--rc);border-radius:8px;color:var(--rc);font-size:18px;width:40px;height:40px;cursor:pointer;opacity:"+(wkOff>=51?.3:.8),onClick:()=>setWkOff(o=>Math.min(o+1,51))},"\u2039"),
@@ -872,10 +917,10 @@ h("button",{style:"background:var(--sf2);border:1px solid var(--rc);border-radiu
 ),
 wkOff>0&&h("button",{style:"width:100%;margin-top:10px;background:rgba(255,255,255,0.03);border:1px solid var(--rc);border-radius:8px;color:var(--rc);font-family:Orbitron,sans-serif;font-size:10px;letter-spacing:2px;padding:7px;cursor:pointer;text-transform:uppercase",onClick:()=>setWkOff(0)},"Aujourd'hui")
 ),
+// Activité de la semaine
 h("div",{class:"card"},
 h("div",{class:"ctitle",style:"margin-bottom:12px"},"\uD83D\uDCCA Activit\u00e9 de la semaine"),
 ordered.map(obj=>{
-// Pour les quêtes binaires : compter les jours réussis sur la semaine ISO (lundi→dimanche)
 if(obj.binary){
 const pastDays=weekDays.filter(d=>d<=today);
 const successes=pastDays.filter(d=>(state.dailyLog[d]?.[obj.id]||0)>=1).length;
@@ -915,6 +960,28 @@ complete&&h("span",{style:"font-size:22px"},"✅")
 );
 }),
 ordered.every(o=>!(tots[o.id]>0))&&h("div",{style:"text-align:center;font-size:13px;color:var(--td);padding:16px 0"},"Aucune activit\u00e9 cette semaine")
+),
+// Records personnels
+h("div",{class:"card"},
+h("div",{class:"ctitle"},"\uD83C\uDFC6 Records personnels"),
+objs.filter(o=>!o.binary).map(o=>{
+const rec=records[o.id];
+if(!rec)return h("div",{key:o.id,style:"display:flex;align-items:center;gap:10px;margin-bottom:8px;opacity:.4"},
+h("span",{style:"font-size:16px"},o.icon),
+h("div",{style:"flex:1;font-size:12px;color:var(--td)"},o.name),
+h("span",{style:"font-size:11px;color:var(--td)"},"—")
+);
+const fmt2=d=>{if(d.includes("-W"))return d;const p=d.split("-");return p[2]+"/"+p[1];};
+return h("div",{key:o.id,style:"display:flex;align-items:center;gap:10px;margin-bottom:8px"},
+h("span",{style:"font-size:16px"},o.icon),
+h("div",{style:"flex:1"},
+h("div",{style:"font-size:12px;color:var(--tx)"},o.name),
+h("div",{style:"font-size:10px;color:var(--td);margin-top:1px"},fmt2(rec.date))
+),
+h("span",{style:"font-family:Orbitron,sans-serif;font-size:13px;font-weight:700;color:var(--rc)"+(rec.val>0?";text-shadow:0 0 8px var(--rg)":"")},
+(rec.val%1===0?rec.val:rec.val.toFixed(1))+" "+o.unit)
+);
+})
 )
 );
 }
