@@ -193,7 +193,7 @@ Vitalite:[
 {id:"sp_breath", name:"Coh\u00e9rence cardiaque",icon:"\uD83D\uDC9A", unit:"jour", target:1, xp:200, days:1, desc:"10 min de respiration contr\u00f4l\u00e9e", binary:true},
 {id:"sp_nojunk", name:"Pas de junk-food", icon:"\uD83C\uDF55", unit:"jour", target:1, xp:100, days:1, desc:"Z\u00e9ro junk-food en 24h", binary:true},
 {id:"sp_sun", name:"Lumi\u00e8re naturelle", icon:"\u2600\uFE0F", unit:"min", target:10, xp:200, days:1, desc:"10 min de lumi\u00e8re naturelle"},
-{id:"sp_cold", name:"Douche froide", icon:"\uD83D\uDEBF", unit:"jour", target:1, xp:100, days:1, desc:"Finir par 30 sec d'eau froide", binary:true},
+{id:"sp_cold", name:"Douche froide", icon:"\uD83D\uDEBF", unit:"jour", target:1, xp:100, days:1, desc:"", binary:true},
 ],
 };
 
@@ -295,7 +295,7 @@ dailyLog:{
 weeklyLog:{"2026-W15":{run:13},"2026-W16":{run:8.52}},
 stats:{Vitalite:5,Force:5,Esprit:4,Endurance:4,Discipline:3},
 statXp:{Vitalite:3557.5,Force:4751.2,Esprit:2312.5,Endurance:1726,Discipline:1350},
-specialQuests:[{id:"sp_cold",name:"Douche froide",icon:"\uD83D\uDEBF",unit:"jour",target:1,xp:100,days:1,desc:"Finir par 30 sec d'eau froide",binary:true,stat:"Vitalite",sqid:"sq_1776674853456",progress:0,startedAt:1776674853456,expiresAt:1776761253456,completedAt:null}],
+specialQuests:[{id:"sp_cold",name:"Douche froide",icon:"\uD83D\uDEBF",unit:"jour",target:1,xp:100,days:1,desc:"",binary:true,stat:"Vitalite",sqid:"sq_1776674853456",progress:0,startedAt:1776674853456,expiresAt:1776761253456,completedAt:null}],
 objectives:DEFS,
 };
 
@@ -900,7 +900,6 @@ h("div",{class:"card",style:"border-color:#ef444444"},
 h("div",{class:"shdr"},
 h("div",null,
 h("div",{class:"ctitle",style:"margin:0;color:#ef4444"},"\uD83D\uDEA8 Qu\u00eate urgente"),
-h("div",{style:"font-size:10px;color:var(--td);margin-top:2px"},"24h pour relever le d\u00e9fi \u23F1")
 )
 ),
 activeSq&&h(SqCard,{sq:activeSq,showInput:true}),
@@ -1090,9 +1089,11 @@ obj.weekly&&h("span",{style:"font-size:9px;color:#818cf8;font-family:Orbitron,sa
 obj.optional&&h("span",{style:"font-size:9px;color:#fbbf24;font-family:Orbitron,sans-serif;border:1px solid #fbbf2455;border-radius:4px;padding:1px 4px"},"BONUS")
 ),
 h("span",{style:"font-family:Orbitron,sans-serif;font-size:10px"},
-(val%1===0?val:val.toFixed(1))+"/"+wt+" "+obj.unit)
+obj.optional
+? (val%1===0?val:val.toFixed(1))+(val>0?" "+obj.unit:"")+" /∞"
+: (val%1===0?val:val.toFixed(1))+"/"+wt+" "+obj.unit)
 ),
-h("div",{class:"qbar"},h("div",{class:"qfill"+(over?" over":complete?" done":""),style:"width:"+pct+"%;opacity:"+(val>0?1:0.15)}))
+h("div",{class:"qbar"},h("div",{class:"qfill"+(obj.optional?"":over?" over":complete?" done":""),style:"width:"+(obj.optional?Math.min(100,(val/wt)*100):pct)+"%;opacity:"+(val>0?1:0.15)}))
 ),
 complete&&h("span",{style:"font-size:22px"},"✅")
 );
@@ -1117,7 +1118,7 @@ h("div",{style:"font-size:12px;color:var(--tx)"},o.name),
 h("div",{style:"font-size:10px;color:var(--td);margin-top:1px"},fmt2(rec.date))
 ),
 h("span",{style:"font-family:Orbitron,sans-serif;font-size:13px;font-weight:700;color:var(--rc)"+(rec.val>0?";text-shadow:0 0 8px var(--rg)":"")},
-(rec.val%1===0?rec.val:rec.val.toFixed(1))+" "+o.unit)
+(rec.val%1===0?rec.val:rec.val.toFixed(1))+" "+o.unit+(o.optional?" /∞":""))
 );
 })
 )
