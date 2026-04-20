@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -155,7 +154,7 @@ const DEFS = [
   {id:"reading",name:"Lecture",        unit:"pages",xpPer:5,  daily:true, weekly:false,optional:false,stat:"Esprit",   icon:"\uD83D\uDCDA",              base:10},
   {id:"sleep",  name:"Sommeil",        unit:"nuit", xpPer:0,  daily:true, weekly:false,optional:false,stat:"Vitalite", icon:"\uD83D\uDECF\uFE0F",        base:1, binary:true, binaryXp:50},
   {id:"nosugar",name:"Sans sucres",    unit:"jour", xpPer:0,  daily:true, weekly:false,optional:false,stat:"Vitalite", icon:"\uD83D\uDEAB",              base:1, binary:true, binaryXp:200},
-  {id:"protein", name:"Barre prot\u00e9in\u00e9e", unit:"repas", xpPer:0, daily:true, weekly:false,optional:false,stat:"Vitalite", icon:"\uD83C\uDF4F",   base:1, binary:true, binaryXp:100},
+  {id:"protein", name:"Barre prot\u00e9in\u00e9e", unit:"repas", xpPer:0, daily:true, weekly:false,optional:false,stat:"Vitalite", icon:"\uD83C\uDF4F",   base:1, binary:true, binaryXp:100, startDate:"2026-04-20"},
   {id:"run",    name:"Course",         unit:"km",   xpPer:50, daily:false,weekly:true, optional:false,stat:"Endurance",icon:"\uD83C\uDFC3\uD83C\uDFFB",  base:7},
   {id:"med",    name:"M\u00e9ditation",unit:"min",  xpPer:5,  daily:true, weekly:false,optional:true, stat:"Esprit",   icon:"\uD83E\uDDD8\uD83C\uDFFB",  base:5},
   {id:"flex",   name:"Souplesse",      unit:"min",  xpPer:5,  daily:true, weekly:false,optional:true, stat:"Vitalite", icon:"\uD83E\uDD38\uD83C\uDFFB",  base:5},
@@ -316,7 +315,6 @@ function buildState(){
     statXp:saved.statXp||IMPORTED.statXp,
     dailyLog:saved.dailyLog||IMPORTED.dailyLog,
     weeklyLog:saved.weeklyLog||IMPORTED.weeklyLog,
-    // Ne jamais garder un totalXp inférieur à ce qu'on a calculé
     totalXp:Math.max(saved.totalXp||0, IMPORTED.totalXp),
     prestige:saved.prestige||IMPORTED.prestige||0,
     restMode:saved.restMode||false,
@@ -374,7 +372,7 @@ function App(){
     const yesterday=new Date(t);yesterday.setDate(yesterday.getDate()-1);
     const yk=(() => {const d=yesterday;const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");return y+"-"+m+"-"+day;})();
     const yLog=state.dailyLog[yk]||{};
-    const reqObjs=(state.objectives||DEFS).filter(o=>!o.optional&&o.daily);
+    const reqObjs=(state.objectives||DEFS).filter(o=>!o.optional&&o.daily&&(!o.startDate||o.startDate<=yk));
     const yesterdayComplete=reqObjs.every(o=>(yLog[o.id]||0)>=o.base);
     if(!yesterdayComplete&&state.lastActiveDay&&yk>=state.lastActiveDay.slice(0,10)){
       // Hier était un jour actif (on avait des logs) mais incomplet
@@ -423,6 +421,8 @@ function App(){
 
   // 7. Quetes journalieres obligatoires toutes faites ?
   const reqDailyObjs  = objs.filter(o=>!o.optional&&o.daily);
+  // Quêtes actives pour un jour donné (exclut les quêtes ajoutées après ce jour)
+  const activeOn = (day) => reqDailyObjs.filter(o=>!o.startDate||o.startDate<=day);
   const allDailyDone  = reqDailyObjs.every(o=>(tLog[o.id]||0)>=getRankBase(o.id,ri,prestige));
 
   // 8. Streak : calculé depuis dailyLog mais ne descend jamais sous le streak sauvegardé si hier était complet
@@ -431,7 +431,7 @@ function App(){
     for(let i=0;i<365;i++){
       const dk=d.toISOString().slice(0,10);
       const log=state.dailyLog[dk]||{};
-      if(!reqDailyObjs.every(o=>(log[o.id]||0)>=o.base))break;
+      if(!activeOn(dk).every(o=>(log[o.id]||0)>=o.base))break;
       streak++; d.setDate(d.getDate()-1);
     }
     // Si aujourd'hui est incomplet, le streak "en cours" = streak des jours passés
@@ -440,7 +440,7 @@ function App(){
     const yesterday=new Date(today);yesterday.setDate(yesterday.getDate()-1);
     const yk=yesterday.toISOString().slice(0,10);
     const yesterdayLog=state.dailyLog[yk]||{};
-    const yesterdayDone=reqDailyObjs.every(o=>(yesterdayLog[o.id]||0)>=o.base);
+    const yesterdayDone=activeOn(yk).every(o=>(yesterdayLog[o.id]||0)>=o.base);
     // Si hier était complet, on affiche au moins le streak sauvegardé
     if(yesterdayDone && streak===0) return state.streak;
     return streak;
@@ -462,7 +462,7 @@ function App(){
     const ws=new Date(); ws.setDate(ws.getDate()-((ws.getDay()+6)%7)); ws.setHours(0,0,0,0);
     const days=Array.from({length:7},(_,i)=>{const d=new Date(ws);d.setDate(ws.getDate()+i);return d.toISOString().slice(0,10);});
     if(days.some(d=>d>today))return false;
-    const dailyOk=reqDailyObjs.every(o=>days.every(d=>(state.dailyLog[d]?.[o.id]||0)>=getRankBase(o.id,ri,prestige)));
+    const dailyOk=reqDailyObjs.every(o=>days.every(d=>activeOn(d).indexOf(o)<0||(state.dailyLog[d]?.[o.id]||0)>=getRankBase(o.id,ri,prestige)));
     if(!dailyOk)return false;
     const runBase=getRankBase("run",ri,prestige);
     const runDone=wLog["run"]||0;
@@ -496,7 +496,7 @@ function App(){
     const d=new Date(today);d.setDate(d.getDate()-1);
     const yk=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
     const yLog=state.dailyLog[yk]||{};
-    const reqObjs=(state.objectives||DEFS).filter(o=>!o.optional&&o.daily);
+    const reqObjs=(state.objectives||DEFS).filter(o=>!o.optional&&o.daily&&(!o.startDate||o.startDate<=yk));
     return Object.keys(yLog).length>0&&!reqObjs.every(o=>(yLog[o.id]||0)>=o.base);
   })();
 
@@ -1038,7 +1038,7 @@ function App(){
           const xp=Object.entries(log).reduce((s,[id,a])=>{const o=objs.find(x=>x.id===id);return s+(o?calcXp(o,a):0);},0);
           const allDone=d===today
             ?reqDailyObjs.every(o=>(log[o.id]||0)>=getTarget(o.base))
-            :reqDailyObjs.every(o=>(log[o.id]||0)>0);
+            :activeOn(d).every(o=>(log[o.id]||0)>0);
           const isPast=d<today;
           const border=allDone?"2px solid #4ade80":isPast&&xp>0?"2px solid #ef4444":d===today?"1px solid "+rank.color:"1px solid #ffffff18";
           const shadow=allDone?"0 0 6px #4ade8066":isPast&&xp>0?"0 0 6px #ef444466":"";
@@ -1209,7 +1209,7 @@ function App(){
             h("button",{class:"mbtn mprim",style:"flex:1",onClick:()=>{
               const json=window.prompt("Colle tes donn\u00e9es ici :");
               if(!json)return;
-              try{setState(JSON.parse(json));alert("\u2705 Restaur\u00e9 !");setShowSet(false);}catch{alert("\u274C Donn\u00e9es invalides.");}
+              try{const imported=JSON.parse(json);setState(s=>({...s,...imported,objectives:DEFS}));alert("\u2705 Restaur\u00e9 !");setShowSet(false);}catch{alert("\u274C Donn\u00e9es invalides.");}
             }},"\uD83D\uDCE5 Importer")
           )
         ),
