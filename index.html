@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -26,9 +27,9 @@ html,body{height:100%;width:100%;overflow:hidden;background:#0a0a0f;color:var(--
 .xpfill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--ra),var(--rc));box-shadow:0 0 8px var(--rg);transition:width .6s}
 .scroll-area{flex:1;width:100%;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
 .nav{flex-shrink:0;width:100%;background:#0a0a0f;display:flex;z-index:200;border-top:1px solid rgba(255,255,255,0.06)}
-.nbtn{flex:1;padding:6px 0;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--td);font-family:'Rajdhani',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;transition:color .2s}
+.nbtn{flex:1;padding:4px 0;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;color:var(--td);font-family:'Rajdhani',sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;transition:color .2s}
 .nbtn.on{color:var(--rc)}
-.nicon{font-size:20px}
+.nicon{font-size:18px}
 .tab{padding:16px 16px 0;position:relative;z-index:1}
 .card{background:var(--sf);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px;margin-bottom:12px;position:relative;overflow:hidden}
 .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--rc),transparent);opacity:.4}
@@ -275,10 +276,10 @@ const saveState  = s  => { try{ localStorage.setItem("sl_v3",JSON.stringify(s));
 // ─── DONNEES IMPORTEES ─────────────────────────────────────────────────────
 
 const IMPORTED = {
-  totalXp:13697.2, streak:1, lastActiveDay:"2026-04-20",
-  streakBonusDay:"2026-04-19", weeklyBonusWk:"2026-W15", lastStreakDay:"2026-04-19",
+  totalXp:14510.7, streak:2, lastActiveDay:"2026-04-20",
+  streakBonusDay:"2026-04-20", weeklyBonusWk:"2026-W15", lastStreakDay:"2026-04-20",
   streakMilestones:[5,10], penaltyDay:"2026-04-20",
-  prestige:0, restMode:false, walkTarget:0,
+  prestige:0, restMode:true, walkTarget:5,
   dailyLog:{
     "2026-04-06":{water:8,push:36,abs:72,sleep:1},
     "2026-04-07":{water:8,push:36,abs:72,squats:15,reading:11,flex:5,sleep:1,med:6},
@@ -294,12 +295,12 @@ const IMPORTED = {
     "2026-04-17":{water:9,push:68,abs:130,squats:42,reading:21,sleep:1,nosugar:1,grips:540},
     "2026-04-18":{water:13,sleep:1,push:75,abs:126,squats:36,nosugar:0},
     "2026-04-19":{sleep:1,water:9,nosugar:1,reading:18,push:88,abs:134,squats:32,grips:518,med:5},
-    "2026-04-20":{sleep:1,push:68,abs:128,squats:34,water:2}
+    "2026-04-20":{sleep:1,push:68,abs:128,squats:34,water:12,nosugar:1,protein:1,reading:29,grips:540,walk:0.5}
   },
-  weeklyLog:{"2026-W15":{run:13},"2026-W16":{run:8.52}},
+  weeklyLog:{"2026-W15":{run:13},"2026-W16":{run:8.52},"2026-W17":{walk:0.5}},
   stats:{Vitalite:5,Force:5,Esprit:4,Endurance:4,Discipline:3},
-  statXp:{Vitalite:3557.5,Force:4751.2,Esprit:2312.5,Endurance:1726,Discipline:1350},
-  specialQuests:[{id:"sp_cold",name:"Douche froide",icon:"\uD83D\uDEBF",unit:"jour",target:1,xp:100,days:1,desc:"",binary:true,stat:"Vitalite",sqid:"sq_1776674853456",progress:0,startedAt:1776674853456,expiresAt:1776761253456,completedAt:null}],
+  statXp:{Vitalite:4017.5,Force:4807.2,Esprit:2485,Endurance:1751,Discipline:1450},
+  specialQuests:[{id:"sp_cold",name:"Douche froide",icon:"\uD83D\uDEBF",unit:"jour",target:1,xp:100,days:1,desc:"",binary:true,stat:"Vitalite",sqid:"sq_1776674853456",progress:1,startedAt:1776674853456,expiresAt:1776761253456,completedAt:1776710434588}],
   objectives:DEFS,
 };
 
@@ -1158,7 +1159,7 @@ function App(){
       h("div",{class:"modal"},
         h("div",{style:"display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"},
           h("div",{class:"mtitle",style:"margin-bottom:0"},"\u2699 R\u00e9glages"),
-          h("button",{style:"background:none;border:none;color:var(--td);font-size:22px;cursor:pointer",onClick:()=>{setShowSet(false);setConfirmReset(false);}},"\u2715")
+          h("button",{style:"background:none;border:none;color:var(--td);font-size:44px;line-height:1;cursor:pointer",onClick:()=>{setShowSet(false);setConfirmReset(false);}},"\u2715")
         ),
         h("div",{class:"msec"},
           h("div",{class:"mlbl"},"\uD83E\uDE79 Mode blessure \u2014 Course"),
