@@ -277,9 +277,9 @@ const saveState  = s  => { try{ localStorage.setItem("sl_v3",JSON.stringify(s));
 // ─── DONNEES IMPORTEES ─────────────────────────────────────────────────────
 
 const IMPORTED = {
-  totalXp:14510.7, streak:2, lastActiveDay:"2026-04-20",
-  streakBonusDay:"2026-04-20", weeklyBonusWk:"2026-W15", lastStreakDay:"2026-04-20",
-  streakMilestones:[5,10], penaltyDay:"2026-04-20",
+  totalXp:18695.7, streak:0, lastActiveDay:"2026-04-24",
+  streakBonusDay:"2026-04-22", weeklyBonusWk:"2026-W15", lastStreakDay:"2026-04-22",
+  streakMilestones:[5,10], penaltyDay:"2026-04-24",
   prestige:0, restMode:true, walkTarget:5,
   dailyLog:{
     "2026-04-06":{water:8,push:36,abs:72,sleep:1},
@@ -296,18 +296,38 @@ const IMPORTED = {
     "2026-04-17":{water:9,push:68,abs:130,squats:42,reading:21,sleep:1,nosugar:1,grips:9},
     "2026-04-18":{water:13,sleep:1,push:75,abs:126,squats:36,nosugar:0},
     "2026-04-19":{sleep:1,water:9,nosugar:1,reading:18,push:88,abs:134,squats:32,grips:8.6,med:5},
-    "2026-04-20":{sleep:1,push:68,abs:128,squats:34,water:12,nosugar:1,protein:1,reading:29,grips:9,walk:0.5}
+    "2026-04-20":{sleep:1,push:68,abs:128,squats:34,water:12,nosugar:1,protein:1,reading:29,grips:9,walk:0.5,med:5},
+    "2026-04-21":{water:12,sleep:1,push:68,abs:125,squats:38,reading:22,protein:1,nosugar:1,grips:11},
+    "2026-04-22":{water:8,sleep:1,push:114,abs:247,squats:46,reading:24,grips:16.7,nosugar:1,protein:1,med:5},
+    "2026-04-23":{water:8,sleep:1,push:60,abs:118,squats:36,reading:7,nosugar:0,protein:1,flex:0,grips:0,med:8},
+    "2026-04-24":{sleep:0,push:90,abs:126,squats:40,water:8,protein:1,grips:10.5,nosugar:1,reading:26,flex:0,med:0}
   },
-  weeklyLog:{"2026-W15":{run:13},"2026-W16":{run:8.52},"2026-W17":{walk:0.5}},
-  stats:{Vitalite:5,Force:5,Esprit:4,Endurance:4,Discipline:3},
-  statXp:{Vitalite:4017.5,Force:4807.2,Esprit:2485,Endurance:1751,Discipline:1450},
-  specialQuests:[{id:"sp_cold",name:"Douche froide",icon:"\uD83D\uDEBF",unit:"jour",target:1,xp:100,days:1,desc:"",binary:true,stat:"Vitalite",sqid:"sq_1776674853456",progress:1,startedAt:1776674853456,expiresAt:1776761253456,completedAt:1776710434588}],
+  weeklyLog:{"2026-W15":{run:13},"2026-W16":{run:8.52},"2026-W17":{walk:3,run:0}},
+  stats:{Vitalite:5,Force:6,Esprit:5,Endurance:4,Discipline:3},
+  statXp:{Vitalite:5557.5,Force:6767.2,Esprit:3107.5,Endurance:1813.5,Discipline:1450},
+  specialQuests:[],
   objectives:DEFS,
 };
+
+function migrateGripsToMin(dailyLog){
+  // Grips était en secondes (xpPer:0.1), maintenant en minutes (xpPer:10)
+  // Seuil : si valeur > 30 on suppose que c'est des secondes → convertir
+  // (personne ne fait 30+ min de hand grips d'une traite)
+  const out={};
+  for(const [day,log] of Object.entries(dailyLog)){
+    if(log.grips!=null && log.grips>60){
+      out[day]={...log, grips:Math.round(log.grips/60*10)/10};
+    } else {
+      out[day]=log;
+    }
+  }
+  return out;
+}
 
 function buildState(){
   const saved=loadState();
   if(!saved)return IMPORTED;
+  const migratedLog=migrateGripsToMin(saved.dailyLog||IMPORTED.dailyLog);
   return {
     ...IMPORTED,
     ...saved,
@@ -315,7 +335,7 @@ function buildState(){
     specialQuests:saved.specialQuests||[],
     stats:saved.stats||IMPORTED.stats,
     statXp:saved.statXp||IMPORTED.statXp,
-    dailyLog:saved.dailyLog||IMPORTED.dailyLog,
+    dailyLog:migratedLog,
     weeklyLog:saved.weeklyLog||IMPORTED.weeklyLog,
     totalXp:Math.max(saved.totalXp||0, IMPORTED.totalXp),
     prestige:saved.prestige||IMPORTED.prestige||0,
@@ -354,6 +374,13 @@ function App(){
   const walkTargetRef = useRef(state.walkTarget||0);
   // Sync ref from state on mount (after reload)
   useEffect(()=>{ walkTargetRef.current=state.walkTarget||0; },[]);
+  // Migration grips sec→min sur le state en mémoire (au cas où localStorage non migré)
+  useEffect(()=>{
+    const needsMigration=Object.values(state.dailyLog).some(log=>log.grips!=null&&log.grips>60);
+    if(needsMigration){
+      setState(s=>({...s,dailyLog:migrateGripsToMin(s.dailyLog)}));
+    }
+  },[]);
 
   // Persistance
   useEffect(()=>{ saveState(state); },[state]);
