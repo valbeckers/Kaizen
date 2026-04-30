@@ -679,8 +679,15 @@ xp+=b*obj.xpPer; // +1 objectif de bonus par palier
 }
 }
 else if(obj.id==="run"){
-// Course : linéaire 50xp/km + 50% bonus sur tous les km si total >= 2x objectif
+// Course : linéaire 50xp/km + 50% bonus si total >= 2x objectif
 const b=getRankBase(obj.id,ri,prestige);
+xp=val*obj.xpPer;
+const totalAfter=cur+val;
+if(totalAfter>=b*2) xp+=Math.round(val*obj.xpPer*0.5);
+}
+else if(obj.id==="walk"&&restMode){
+// Marche en mode blessure : linéaire 25xp/km + 50% bonus si total >= 2x objectif
+const b=walkObj?walkObj.base:getRankBase("run",ri);
 xp=val*obj.xpPer;
 const totalAfter=cur+val;
 if(totalAfter>=b*2) xp+=Math.round(val*obj.xpPer*0.5);
