@@ -152,7 +152,7 @@ const DEFS = [
 {id:"push", name:"Pompes", unit:"reps", xpPer:1, daily:true, weekly:false,optional:false,stat:"Force", icon:"\uD83E\uDDBE", base:30},
 {id:"abs", name:"Abdominaux", unit:"reps", xpPer:1, daily:true, weekly:false,optional:false,stat:"Force", icon:"\uD83E\uDDCE\uD83C\uDFFB", base:60},
 {id:"squats", name:"Squats", unit:"reps", xpPer:1, daily:true, weekly:false,optional:false,stat:"Force", icon:"\uD83E\uDDBF", base:15},
-{id:"water", name:"Hydratation", unit:"verres",xpPer:5, daily:true, weekly:false,optional:false,stat:"Vitalite", icon:"\uD83D\uDCA7", base:8},
+{id:"water", name:"Hydratation", unit:"verres",xpPer:5, daily:true, weekly:false,optional:false,stat:"Vitalite", icon:"\uD83D\uDCA7", base:10},
 {id:"reading",name:"Lecture", unit:"pages",xpPer:5, daily:true, weekly:false,optional:false,stat:"Esprit", icon:"\uD83D\uDCDA", base:10},
 {id:"sleep", name:"Sommeil", unit:"nuit", xpPer:0, daily:true, weekly:false,optional:false,stat:"Vitalite", icon:"\uD83D\uDECF\uFE0F", base:1, binary:true, binaryXp:50},
 {id:"nosugar",name:"Sans sucres", unit:"jour", xpPer:0, daily:true, weekly:false,optional:false,stat:"Vitalite", icon:"\uD83D\uDEAB", base:1, binary:true, binaryXp:200},
@@ -660,13 +660,37 @@ inputs.current[obj.id]="";
 if(el){el.value="";setTimeout(()=>{try{el.focus();}catch(_){}},50);}
 const cur=obj.weekly?(wLog[obj.id]||0):(tLog[obj.id]||0);
 let xp=0;
+const PALIER_IDS=["push","abs","squats","reading"];
 if(obj.binary){const was=cur>=getRankBase(obj.id,ri,prestige),now2=(cur+val)>=getRankBase(obj.id,ri,prestige); xp=(!was&&now2)?(obj.binaryXp||50):0;}
-else{const nt=cur+val; const b=getRankBase(obj.id,ri,prestige); if(cur>=b)xp=val*obj.xpPer*1.5; else if(nt<=b)xp=val*obj.xpPer; else{const n=b-cur; xp=n*obj.xpPer+(val-n)*obj.xpPer*1.5;}}
+else if(PALIER_IDS.includes(obj.id)){
+// Système paliers : 0 XP si objectif non atteint, XP normal sinon
+// Bonus = XP × multiple supplémentaire (2x objectif = +100%, 3x = +200%, etc.)
+const b=getRankBase(obj.id,ri,prestige);
+const prev=cur, next=cur+val;
+if(next<b){xp=0;} // objectif non atteint → 0 XP
+else {
+xp=val*obj.xpPer; // XP normal sur la valeur saisie
+// Bonus par palier franchi (2x, 3x, etc.)
+const prevMult=prev<b?1:Math.floor(prev/b); // palier actuel avant saisie
+const nextMult=Math.floor(next/b); // palier après saisie
+for(let m=Math.max(2,prevMult+1);m<=nextMult;m++){
+xp+=b*obj.xpPer; // +1 objectif de bonus par palier
+}
+}
+}
+else if(obj.id==="run"){
+// Course : linéaire 50xp/km + 50% bonus sur tous les km si total >= 2x objectif
+const b=getRankBase(obj.id,ri,prestige);
+xp=val*obj.xpPer;
+const totalAfter=cur+val;
+if(totalAfter>=b*2) xp+=Math.round(val*obj.xpPer*0.5);
+}
+else{const nt=cur+val; const b=getRankBase(obj.id,ri,prestige); if(cur>=b)xp=val*obj.xpPer; else if(nt<=b)xp=val*obj.xpPer; else xp=val*obj.xpPer;}
 setState(s=>{
 if(obj.weekly){const w={...s.weeklyLog};w[wk]={...(w[wk]||{}),[obj.id]:(w[wk]?.[obj.id]||0)+val};return{...s,weeklyLog:w,lastActiveDay:todayStr()};}
 const d={...s.dailyLog};d[today]={...(d[today]||{}),[obj.id]:(d[today]?.[obj.id]||0)+val};return{...s,dailyLog:d,lastActiveDay:todayStr()};
 });
-if(xp>0)addXp(xp,obj.stat,e); else if(obj.binary)spawnFloat("0 XP",e);
+if(xp>0)addXp(xp,obj.stat,e); else spawnFloat("0 XP",e);
 }
 
 function progressSq(sq,e){
