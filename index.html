@@ -159,10 +159,10 @@ const DEFS = [
   {id:"nosugar",name:"Sans sucres",    unit:"jour", xpPer:0,  daily:true, weekly:false,optional:false,stat:"Vitalite", icon:"\uD83D\uDEAB",              base:1, binary:true, binaryXp:200},
   {id:"protein", name:"Barre prot\u00e9in\u00e9e", unit:"repas", xpPer:0, daily:true, weekly:false,optional:false,stat:"Vitalite", icon:"\uD83C\uDF4F",   base:1, binary:true, binaryXp:100, startDate:"2026-04-20"},
   {id:"run",    name:"Course",         unit:"km",   xpPer:50, daily:false,weekly:true, optional:false,stat:"Endurance",icon:"\uD83C\uDFC3\uD83C\uDFFB",  base:7},
-  {id:"med",    name:"M\u00e9ditation",unit:"min",  xpPer:5,  daily:true, weekly:false,optional:true, stat:"Esprit",   icon:"\uD83E\uDDD8\uD83C\uDFFB",  base:5},
-  {id:"flex",   name:"Souplesse",      unit:"min",  xpPer:5,  daily:true, weekly:false,optional:true, stat:"Vitalite", icon:"\uD83E\uDD38\uD83C\uDFFB",  base:5},
-  {id:"walk",   name:"Marche",         unit:"km",   xpPer:25, daily:true, weekly:false,optional:true, stat:"Endurance",icon:"\uD83D\uDEB6\uD83C\uDFFB\u200D\u2642\uFE0F",              base:3},
-  {id:"grips",  name:"Hand grips",     unit:"min",  xpPer:10, daily:true, weekly:false,optional:true, stat:"Force",    icon:"\u270A\uD83C\uDFFB",        base:500},
+  {id:"med",    name:"M\u00e9ditation",unit:"min",  xpPer:5,  daily:true, weekly:false,optional:true, stat:"Esprit",   icon:"\uD83E\uDDD8\uD83C\uDFFB",  base:15},
+  {id:"flex",   name:"Souplesse",      unit:"min",  xpPer:5,  daily:true, weekly:false,optional:true, stat:"Vitalite", icon:"\uD83E\uDD38\uD83C\uDFFB",  base:15},
+  {id:"walk",   name:"Marche",         unit:"km",   xpPer:25, daily:true, weekly:false,optional:true, stat:"Endurance",icon:"\uD83D\uDEB6\uD83C\uDFFB\u200D\u2642\uFE0F",              base:5},
+  {id:"grips",  name:"Hand grips",     unit:"min",  xpPer:10, daily:true, weekly:false,optional:true, stat:"Force",    icon:"\u270A\uD83C\uDFFB",        base:10},
 ];
 
 // Quetes speciales — par stat
@@ -635,7 +635,7 @@ function App(){
     if(el){el.value="";setTimeout(()=>{try{el.focus();}catch(_){}},50);}
     const cur=obj.weekly?(wLog[obj.id]||0):(tLog[obj.id]||0);
     let xp=0;
-    const PALIER_IDS=["push","abs","squats","reading"];
+    const PALIER_IDS=["push","abs","squats","reading","med","flex","grips","walk"];
     if(obj.binary){const was=cur>=getRankBase(obj.id,ri,prestige),now2=(cur+val)>=getRankBase(obj.id,ri,prestige); xp=(!was&&now2)?(obj.binaryXp||50):0;}
     else if(PALIER_IDS.includes(obj.id)){
       // Système paliers : 0 XP si objectif non atteint, XP normal sinon
@@ -820,12 +820,10 @@ function App(){
       h("div",{style:"flex:1"},
         h("div",{style:"font-size:12px;color:"+(obj.optional?d>0?"var(--rc)":"var(--tx)":over?"#f59e0b":done?"var(--rc)":"var(--tx)")+";margin-bottom:3px;display:flex;justify-content:space-between"},
           h("span",null,obj.name),
-          obj.optional
-            ? h("span",{style:"font-family:Orbitron,sans-serif;font-size:10px;color:"+(d>0?"var(--rc)":"var(--td)")},d>0?d+" "+obj.unit+"/∞":"∞")
-            : h("span",{style:"font-family:Orbitron,sans-serif;font-size:10px"},d+"/"+t+" "+obj.unit)
+          h("span",{style:"font-family:Orbitron,sans-serif;font-size:10px;color:"+(d>=t?"var(--rc)":d>0?"var(--tx)":"var(--td)")},d+"/"+t+" "+obj.unit)
         ),
         obj.optional
-          ? h("div",{class:"qbar"},h("div",{class:"qfill",style:"width:"+(d>0?Math.min(100,(d/t)*100):0)+"%;opacity:"+(d>0?0.6:0.15)}))
+          ? h("div",{class:"qbar"},h("div",{class:"qfill"+(d>t?" over":d>=t?" done":""),style:"width:"+(d>0?Math.min(100,(d/t)*100):0)+"%;opacity:"+(d>0?1:0.15)}))
           : h("div",{class:"qbar"},h("div",{class:"qfill"+(over?" over":done?" done":""),style:"width:"+pct+"%;opacity:"+(done||over?1:0.7)}))
       ),
       !obj.optional&&done&&h("span",{style:"font-size:22px"},"✅")
