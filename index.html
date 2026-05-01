@@ -416,29 +416,7 @@ function App(){
     }
   },[]);
 
-  // Penalite hier incomplet : -200 XP -200 Discipline (une seule fois par jour)
-  useEffect(()=>{
-    const t=todayStr();
-    if(state.penaltyDay===t)return; // déjà appliquée aujourd'hui
-    const yesterday=new Date(t);yesterday.setDate(yesterday.getDate()-1);
-    const yk=(() => {const d=yesterday;const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");return y+"-"+m+"-"+day;})();
-    const yLog=state.dailyLog[yk]||{};
-    const reqObjs=(state.objectives||DEFS).filter(o=>!o.optional&&o.daily&&(!o.startDate||o.startDate<=yk));
-    const yesterdayComplete=reqObjs.every(o=>(yLog[o.id]||0)>=o.base);
-    if(!yesterdayComplete&&state.lastActiveDay&&yk>=state.lastActiveDay.slice(0,10)){
-      // Hier était un jour actif (on avait des logs) mais incomplet
-      const hadActivity=Object.keys(yLog).length>0;
-      if(hadActivity){
-        setState(s=>{
-          const sx={...s.statXp,Discipline:Math.max(0,(s.statXp.Discipline||0)-200)};
-          return {...s,totalXp:Math.max(0,s.totalXp-200),statXp:sx,stats:{...s.stats,Discipline:getLvl(sx.Discipline)},penaltyDay:t};
-        });
-      }
-    } else if(yesterdayComplete){
-      // Hier complet, on marque quand même le jour pour ne pas retester
-      setState(s=>({...s,penaltyDay:t}));
-    }
-  },[]);
+
 
   // ─── CALCULS DERIVES (dans l'ordre, sans circularite) ──────────────────
 
@@ -541,15 +519,7 @@ function App(){
     const d=Math.round((new Date(today)-new Date(state.lastActiveDay))/86400000);
     return d>1?d:0;
   })();
-  // Bandeau pénalité hier incomplet
-  const yesterdayIncomplete = (()=>{
-    if(state.penaltyDay!==today)return false;
-    const d=new Date(today);d.setDate(d.getDate()-1);
-    const yk=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-    const yLog=state.dailyLog[yk]||{};
-    const reqObjs=(state.objectives||DEFS).filter(o=>!o.optional&&o.daily&&(!o.startDate||o.startDate<=yk));
-    return Object.keys(yLog).length>0&&!reqObjs.every(o=>(yLog[o.id]||0)>=o.base);
-  })();
+
 
   // ─── EFFECTS ──────────────────────────────────────────────────────────
 
@@ -574,9 +544,9 @@ function App(){
       let next={...s};
       if(s.lastStreakDay!==t)next={...next,lastStreakDay:t};
       if(s.streakBonusDay!==t){
-        const sx={...next.statXp,Discipline:(next.statXp.Discipline||0)+100};
+        const sx={...next.statXp,Discipline:(next.statXp.Discipline||0)+250};
         const rkBefore=getRank(next.totalXp);
-        next={...next,totalXp:next.totalXp+100,statXp:sx,stats:{...next.stats,Discipline:getLvl(sx.Discipline)},streakBonusDay:t};
+        next={...next,totalXp:next.totalXp+250,statXp:sx,stats:{...next.stats,Discipline:getLvl(sx.Discipline)},streakBonusDay:t};
         if(getRank(next.totalXp).id!==rkBefore.id)setTimeout(()=>setRankUp(getRank(next.totalXp)),300);
         // Vérifier milestone streak
         const newStreak=next.streak;
@@ -595,7 +565,7 @@ function App(){
         } else {
           setTimeout(()=>{
             const id1=Date.now()+Math.random(),id2=id1+0.1;
-            setFloats(f=>[...f,{id:id1,y:"35%",txt:"\uD83D\uDD25 STREAK BONUS !"},{id:id2,y:"40%",txt:"+100 XP Discipline"}]);
+            setFloats(f=>[...f,{id:id1,y:"35%",txt:"\uD83D\uDD25 STREAK BONUS !"},{id:id2,y:"40%",txt:"+250 XP Discipline"}]);
             setTimeout(()=>setFloats(f=>f.filter(p=>p.id!==id1&&p.id!==id2)),1400);
           },300);
         }
@@ -608,16 +578,16 @@ function App(){
   useEffect(()=>{
     if(!weeklyDone||weeklyBonusGiven)return;
     setState(s=>{
-      const sx={...s.statXp,Discipline:(s.statXp.Discipline||0)+150};
+      const sx={...s.statXp,Discipline:(s.statXp.Discipline||0)+500};
       const rkW=getRank(s.totalXp);
-      const newTotalW=s.totalXp+150;
+      const newTotalW=s.totalXp+500;
       if(getRank(newTotalW).id!==rkW.id)setTimeout(()=>setRankUp(getRank(newTotalW)),300);
       return {...s,totalXp:newTotalW,statXp:sx,stats:{...s.stats,Discipline:getLvl(sx.Discipline)},weeklyBonusWk:wk};
     });
     // Animation floater hebdo
     setTimeout(()=>{
       const id1=Date.now()+Math.random(),id2=id1+0.1;
-      setFloats(f=>[...f,{id:id1,y:"35%",txt:"\uD83D\uDCC5 SEMAINE PARFAITE !"},{id:id2,y:"40%",txt:"+150 XP Discipline"}]);
+      setFloats(f=>[...f,{id:id1,y:"35%",txt:"\uD83D\uDCC5 SEMAINE PARFAITE !"},{id:id2,y:"40%",txt:"+500 XP Discipline"}]);
       setTimeout(()=>setFloats(f=>f.filter(p=>p.id!==id1&&p.id!==id2)),1400);
     },300);
   },[weeklyDone]);
@@ -928,7 +898,7 @@ function App(){
     ];
     return h("div",{class:"tab"},
       missedDays>=2&&h("div",{class:"warn"},"\u26A0\uFE0F P\u00e9nalit\u00e9 : -"+(missedDays*10)+" XP ("+missedDays+" jours manqu\u00e9s)"),
-      yesterdayIncomplete&&h("div",{class:"warn",style:"background:#ef444411;border:1px solid #ef444466;color:#ef4444"},"\uD83D\uDEA8 Hier incomplet \u2014 -200 XP \u2022 -200 XP Discipline"),
+
       h("div",{class:"card"},
         h("div",{style:"display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"},
           h("div",{style:"display:flex;align-items:center;gap:10px"},
@@ -974,7 +944,7 @@ function App(){
             h("div",{style:"font-family:Orbitron,sans-serif;font-size:16px;font-weight:700;color:var(--rc)"},"\uD83D\uDD25 "+state.streak),
             h("div",{style:"font-size:10px;color:var(--td);text-transform:uppercase;letter-spacing:1px;margin-top:2px"},"Streak"),
             bonusGiven&&h("div",{style:"font-size:10px;color:#c084fc;font-family:Orbitron,sans-serif;margin-top:3px"},"+100 XP quotidien \u2705"),
-            weeklyBonusGiven&&h("div",{style:"font-size:10px;color:#c084fc;font-family:Orbitron,sans-serif;margin-top:2px"},"+150 XP hebdomadaire \u2705")
+            weeklyBonusGiven&&h("div",{style:"font-size:10px;color:#c084fc;font-family:Orbitron,sans-serif;margin-top:2px"},"+500 XP hebdomadaire \u2705")
           ),
           h("div",{style:"width:1px;height:32px;background:rgba(255,255,255,0.06)"}),
           h("div",{style:"text-align:center"},
