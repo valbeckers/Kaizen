@@ -750,8 +750,11 @@ function App(){
       const failFlex = validated && !done ? 3 : 1;
       const succFlex = validated && done ? 3 : 1;
       return h("div",{class:"qi "+(done?"done":"")},
-        h("div",{class:"qhdr"},
-          h("div",{class:"qname"},h("span",null,obj.icon)," ",obj.name)
+        h("div",{class:"qhdr",style:"display:flex;justify-content:space-between;align-items:center"},
+          h("div",{class:"qname"},h("span",null,obj.icon)," ",obj.name),
+          h("div",{style:"font-size:9px;color:var(--td);font-family:Orbitron,sans-serif;letter-spacing:0.5px"},
+            obj.binaryXp+" XP · "+(STAT_LBL[obj.stat]||obj.stat)
+          )
         ),
         h("div",{style:"display:flex;gap:8px;margin-top:8px"},
           h("button",{
@@ -763,16 +766,19 @@ function App(){
             style:"flex:"+succFlex+";padding:"+(validated&&!done?"6px 4px":"10px")+";border-radius:8px;border:1px solid "+(validated&&done?"#4ade80":"#4ade8033")+";background:"+(validated&&done?"#4ade8022":"rgba(255,255,255,0.02)")+";color:"+(validated&&done?"#4ade80":"#4ade8055")+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer;letter-spacing:1px;transition:all .2s;white-space:nowrap;overflow:hidden"
           },"\u2705 Succ\u00e8s")
         ),
-        h("div",{style:"font-size:10px;color:var(--td);margin-top:6px;font-family:Orbitron,sans-serif"},
-          obj.binaryXp+" XP si succ\u00e8s \u00b7 "+(STAT_LBL[obj.stat]||obj.stat)
-        )
+
       );
     }
 
     const pct=(d/t)*100, over=d>t;
     return h("div",{class:"qi "+(d>=t&&t>0?"done":"")},
-      h("div",{class:"qhdr"},
-        h("div",{class:"qname"},h("span",null,obj.icon)," ",obj.name)
+      h("div",{class:"qhdr",style:"display:flex;justify-content:space-between;align-items:center"},
+        h("div",{class:"qname"},h("span",null,obj.icon)," ",obj.name),
+        h("div",{style:"font-size:9px;color:var(--td);font-family:Orbitron,sans-serif;letter-spacing:0.5px;text-align:right"},
+          obj.binary
+            ?(obj.binaryXp+" XP · "+(STAT_LBL[obj.stat]||obj.stat))
+            :(obj.xpPer+" XP/"+obj.unit+" · "+(STAT_LBL[obj.stat]||obj.stat)+(obj.stat2?" + "+(STAT_LBL[obj.stat2]||obj.stat2):""))
+        )
       ),
       h("div",{class:"qrow"},
         h(Fragment,null,
@@ -789,9 +795,7 @@ function App(){
           if(el)el.value="";
         }},"+XP")
       ),
-      h("div",{style:"font-size:10px;color:var(--td);margin-top:4px;font-family:Orbitron,sans-serif"},
-        obj.xpPer+" xp/"+obj.unit+" \u00b7 "+(STAT_LBL[obj.stat]||obj.stat)
-      )
+
     );
   }
 
@@ -853,7 +857,7 @@ function App(){
           h("span",{style:"font-size:18px"},sq.icon),
           h("div",null,
             h("div",{style:"font-size:13px;font-weight:700;color:var(--tx)"},sq.name),
-            h("div",{style:"font-size:10px;color:var(--td);margin-top:1px"},sq.desc)
+            
           )
         ),
         h("div",{style:"text-align:right"},
@@ -887,8 +891,8 @@ function App(){
       ? [...objs.filter(o=>o.weekly), walkObj]
       : objs.filter(o=>o.weekly);
     const secs=[
-      {lb:"\uD83D\uDCC5 Qu\u00eates hebdomadaires",ob:sortStat(weeklyObjs), iw:true},
       {lb:"\u2694 Qu\u00eates journali\u00e8res",ob:sortStat(objs.filter(o=>o.daily&&!o.optional)),iw:false},
+      {lb:"\uD83D\uDCC5 Qu\u00eates hebdomadaires",ob:sortStat(weeklyObjs), iw:true},
       {lb:"\u2728 Qu\u00eates bonus", ob:sortStat(objs.filter(o=>(o.daily&&o.optional||o.id==="walk")&&!(restMode&&o.id==="walk"))), iw:false},
     ];
     return h("div",{class:"tab"},
@@ -990,8 +994,8 @@ function App(){
         ),
         !activeSq&&!completedSq&&h("div",{style:"font-size:12px;color:var(--td);text-align:center;padding:8px 0"},"Chargement du d\u00e9fi...")
       ),
-      wkq.length>0&&h("div",{class:"card"},h("div",{class:"ctitle"},"\uD83D\uDCC5 Qu\u00eates hebdomadaires"),wkq.map(o=>h(QI,{key:o.id,obj:o}))),
       h("div",{class:"card"},h("div",{class:"shdr"},h("div",{class:"ctitle",style:"margin:0"},"\u2694 Qu\u00eates journali\u00e8res")),req.map(o=>h(QI,{key:o.id,obj:o}))),
+      wkq.length>0&&h("div",{class:"card"},h("div",{class:"ctitle"},"\uD83D\uDCC5 Qu\u00eates hebdomadaires"),wkq.map(o=>h(QI,{key:o.id,obj:o}))),
       bon.length>0&&h("div",{class:"card"},h("div",{class:"ctitle"},"\u2728 Qu\u00eates bonus"),bon.map(o=>h(QI,{key:o.id,obj:o})))
     );
   }
@@ -1050,7 +1054,7 @@ function App(){
     const we=new Date(ws); we.setDate(ws.getDate()+6);
     const fmt=d=>d.getDate().toString().padStart(2,"0")+"/"+(d.getMonth()+1).toString().padStart(2,"0");
     const lbl=wkOff===0?"Cette semaine":wkOff===1?"Semaine derni\u00e8re":fmt(ws)+" \u2013 "+fmt(we);
-    const ordered=[...(restMode&&walkObj?[...sortStat(objs.filter(o=>o.weekly)),walkObj]:sortStat(objs.filter(o=>o.weekly))),...sortStat(objs.filter(o=>o.daily&&!o.optional)),...sortStat(objs.filter(o=>(o.daily&&o.optional||o.id==="walk")&&!(restMode&&o.id==="walk")))];
+    const ordered=[...sortStat(objs.filter(o=>o.daily&&!o.optional)),...(restMode&&walkObj?[...sortStat(objs.filter(o=>o.weekly)),walkObj]:sortStat(objs.filter(o=>o.weekly))),...sortStat(objs.filter(o=>(o.daily&&o.optional||o.id==="walk")&&!(restMode&&o.id==="walk")))];
 
     // ── 7 derniers jours ──
     const last7=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(6-i));return localDate(d);});
@@ -1160,7 +1164,10 @@ function App(){
               h("div",{style:"font-size:12px;color:"+(over?"#f59e0b":complete?"var(--rc)":"var(--tx)")+";margin-bottom:3px;display:flex;justify-content:space-between"},
                 h("span",{style:"display:flex;align-items:center;gap:6px"},
                   obj.name,
-                  obj.weekly&&h("span",{style:"font-size:9px;color:#818cf8;font-family:Orbitron,sans-serif;border:1px solid #818cf855;border-radius:4px;padding:1px 4px"},"SEMAINE"),
+                  obj.weekly&&!obj.optional&&h("span",{style:"font-size:9px;color:#818cf8;font-family:Orbitron,sans-serif;border:1px solid #818cf855;border-radius:4px;padding:1px 4px"},"HEBDO"),
+                  obj.optional&&obj.id!=="walk"&&h("span",{style:"font-size:9px;color:#fbbf24;font-family:Orbitron,sans-serif;border:1px solid #fbbf2455;border-radius:4px;padding:1px 4px"},"BONUS"),
+                  obj.id==="walk"&&h("span",{style:"font-size:9px;color:#fbbf24;font-family:Orbitron,sans-serif;border:1px solid #fbbf2455;border-radius:4px;padding:1px 4px"},"BONUS"),
+                  obj.id==="walk"&&h("span",{style:"font-size:9px;color:#818cf8;font-family:Orbitron,sans-serif;border:1px solid #818cf855;border-radius:4px;padding:1px 4px;margin-left:2px"},"HEBDO"),
 
                 ),
                 h("span",{style:"font-family:Orbitron,sans-serif;font-size:10px"},
@@ -1176,7 +1183,7 @@ function App(){
       // Records personnels
       h("div",{class:"card"},
         h("div",{class:"ctitle"},"\uD83C\uDFC6 Records personnels"),
-        [...(restMode&&walkObj?[...sortStat(objs.filter(o=>o.weekly&&!o.binary)),walkObj]:sortStat(objs.filter(o=>o.weekly&&!o.binary))),...sortStat(objs.filter(o=>o.daily&&!o.optional&&!o.binary)),...sortStat(objs.filter(o=>o.daily&&o.optional&&!o.binary&&!(restMode&&o.id==="walk")))].map(o=>{
+        [...sortStat(objs.filter(o=>o.daily&&!o.optional&&!o.binary)),...(restMode&&walkObj?[...sortStat(objs.filter(o=>o.weekly&&!o.binary)),walkObj]:sortStat(objs.filter(o=>o.weekly&&!o.binary))),...sortStat(objs.filter(o=>(o.daily&&o.optional||o.id==="walk")&&!o.binary&&!(restMode&&o.id==="walk")))].map(o=>{
           const rec=records[o.id];
           if(!rec)return h("div",{key:o.id,style:"display:flex;align-items:center;gap:10px;margin-bottom:8px;opacity:.4"},
             h("span",{style:"font-size:16px"},o.icon),
@@ -1187,7 +1194,10 @@ function App(){
           return h("div",{key:o.id,style:"display:flex;align-items:center;gap:10px;margin-bottom:8px"},
             h("span",{style:"font-size:16px"},o.icon),
             h("div",{style:"flex:1"},
-              h("div",{style:"font-size:12px;color:var(--tx)"},o.name),
+              h("div",{style:"font-size:12px;color:var(--tx);display:flex;align-items:center;gap:5px"},
+                o.name,
+                (o.weekly||o.id==="walk")&&h("span",{style:"font-size:9px;color:#818cf8;font-family:Orbitron,sans-serif;border:1px solid #818cf855;border-radius:4px;padding:1px 4px"},"HEBDO")
+              ),
               h("div",{style:"font-size:10px;color:var(--td);margin-top:1px"},fmt2(rec.date))
             ),
             h("span",{style:"font-family:Orbitron,sans-serif;font-size:13px;font-weight:700;color:var(--rc)"+(rec.val>0?";text-shadow:0 0 8px var(--rg)":"")},
@@ -1202,7 +1212,7 @@ function App(){
 
   function Settings(){
     if(!showSet)return null;
-    const ordered=[...(restMode&&walkObj?[...sortStat(objs.filter(o=>o.weekly)),walkObj]:sortStat(objs.filter(o=>o.weekly))),...sortStat(objs.filter(o=>o.daily&&!o.optional)),...sortStat(objs.filter(o=>(o.daily&&o.optional||o.id==="walk")&&!(restMode&&o.id==="walk")))];
+    const ordered=[...sortStat(objs.filter(o=>o.daily&&!o.optional)),...(restMode&&walkObj?[...sortStat(objs.filter(o=>o.weekly)),walkObj]:sortStat(objs.filter(o=>o.weekly))),...sortStat(objs.filter(o=>(o.daily&&o.optional||o.id==="walk")&&!(restMode&&o.id==="walk")))];
     function applyEdit(){
       setState(s=>{
         let xpD=0;
