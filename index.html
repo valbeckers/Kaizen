@@ -164,11 +164,12 @@ const DEFS = [
   {id:"push",   name:"Pompes",         unit:"reps", xpPer:1,  daily:true, weekly:false,optional:false,stat:"Force",    icon:"\uD83E\uDDBE",              base:30},
   {id:"abs",    name:"Abdominaux",     unit:"reps", xpPer:1,  daily:true, weekly:false,optional:false,stat:"Force",    icon:"\uD83E\uDDCE\uD83C\uDFFB",  base:60},
   {id:"squats", name:"Squats",         unit:"reps", xpPer:1,  daily:true, weekly:false,optional:false,stat:"Force",    icon:"\uD83E\uDDBF",              base:15, stat2:"Endurance"},
-  {id:"water",  name:"Hydratation",    unit:"verres",xpPer:5, daily:true, weekly:false,optional:false,stat:"Vitalite", icon:"\uD83D\uDCA7",              base:10},
+  {id:"calves", name:"Extensions mollets", unit:"reps", xpPer:0.5, daily:true, weekly:false,optional:false,stat:"Force", icon:"\uD83E\uDDBF",              base:30, stat2:"Endurance", xpPer2:0.5},
   {id:"reading",name:"Lecture",        unit:"pages",xpPer:10, daily:true, weekly:false,optional:false,stat:"Esprit",   icon:"\uD83D\uDCDA",              base:10},
-  {id:"sleep",  name:"Sommeil",        unit:"nuit", xpPer:0,  daily:true, weekly:false,optional:false,stat:"Vitalite", icon:"\uD83D\uDECF\uFE0F",        base:1, binary:true, binaryXp:100},
-  {id:"nosugar",name:"Sans sucres",    unit:"jour", xpPer:0,  daily:true, weekly:false,optional:false,stat:"Vitalite", icon:"\uD83D\uDEAB",              base:1, binary:true, binaryXp:200},
-  {id:"protein", name:"Barre prot\u00e9in\u00e9e", unit:"repas", xpPer:0, daily:true, weekly:false,optional:false,stat:"Vitalite", icon:"\uD83C\uDF4F",   base:1, binary:true, binaryXp:100, startDate:"2026-04-20"},
+  {id:"sleep",  name:"8h de sommeil",  unit:"nuit", xpPer:0,  daily:true, weekly:false,optional:false,stat:"Vitalite", icon:"\uD83D\uDECF\uFE0F",        base:1, binary:true, binaryXp:100},
+  {id:"nosugar",name:"Pas de sucres transform\u00e9s", unit:"jour", xpPer:0, daily:true, weekly:false,optional:false,stat:"Vitalite", icon:"\uD83D\uDEAB", base:1, binary:true, binaryXp:200},
+  {id:"protein", name:"Barre + fruit", unit:"repas", xpPer:0, daily:true, weekly:false,optional:false,stat:"Vitalite", icon:"\uD83C\uDF4F",              base:1, binary:true, binaryXp:100, startDate:"2026-04-20"},
+  {id:"water",  name:"Hydratation",    unit:"verres",xpPer:5, daily:true, weekly:false,optional:false,stat:"Vitalite", icon:"\uD83D\uDCA7",              base:10},
   {id:"run",    name:"Course",         unit:"km",   xpPer:50, daily:false,weekly:true, optional:false,stat:"Endurance",icon:"\uD83C\uDFC3\uD83C\uDFFB",  base:7},
   {id:"med",    name:"M\u00e9ditation",unit:"min",  xpPer:10, daily:true, weekly:false,optional:true, stat:"Esprit",   icon:"\uD83E\uDDD8\uD83C\uDFFB",  base:15},
   {id:"flex",   name:"Souplesse",      unit:"min",  xpPer:5,  daily:true, weekly:false,optional:true, stat:"Vitalite", icon:"\uD83E\uDD38\uD83C\uDFFB",  base:15, stat2:"Endurance", xpPer2:5},
@@ -221,6 +222,7 @@ const getNext    = id => { const i=RANKS.findIndex(r=>r.id===id); return i<RANKS
 
 // Progression des objectifs par rang (linéaire E->S)
 const RANK_BASES = {
+  calves: [30, 44, 58, 72, 86, 100],
   push:    [30, 44, 58,  72,  86,  100],
   abs:     [60, 88, 116, 144, 172, 200],
   squats:  [15, 22, 29,  36,  43,  50],
@@ -652,7 +654,7 @@ function App(){
     if(el){el.value="";setTimeout(()=>{try{el.focus();}catch(_){}},50);}
     const cur=(obj.weekly||obj.id==="walk")?(wLog[obj.id]||0):(tLog[obj.id]||0);
     let xp=0;
-    const PALIER_IDS=["push","abs","squats","reading","med","flex","grips","walk"];
+    const PALIER_IDS=["push","abs","squats","calves","reading","med","flex","grips","walk"];
     if(obj.binary){const was=cur>=getRankBase(obj.id,ri,prestige),now2=(cur+val)>=getRankBase(obj.id,ri,prestige); xp=(!was&&now2)?(obj.binaryXp||50):0;}
     else if(PALIER_IDS.includes(obj.id)){
       // Système paliers : 0 XP si objectif non atteint, XP normal sinon
