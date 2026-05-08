@@ -657,18 +657,23 @@ function App(){
     const PALIER_IDS=["push","abs","squats","calves","reading","med","flex","grips","walk"];
     if(obj.binary){const was=cur>=getRankBase(obj.id,ri,prestige),now2=(cur+val)>=getRankBase(obj.id,ri,prestige); xp=(!was&&now2)?(obj.binaryXp||50):0;}
     else if(PALIER_IDS.includes(obj.id)){
-      // Système paliers : 0 XP si objectif non atteint, XP normal sinon
-      // Bonus = XP × multiple supplémentaire (2x objectif = +100%, 3x = +200%, etc.)
+      // Système paliers : 0 XP si objectif non atteint
+      // Quand l'objectif est franchi, on donne l'XP sur TOUT le cumul (prev+val)
+      // pour compenser les reps à 0 XP faites avant
       const b=getRankBase(obj.id,ri,prestige);
       const prev=cur, next=cur+val;
       if(next<b){xp=0;} // objectif non atteint → 0 XP
       else {
-        xp=val*obj.xpPer; // XP normal sur la valeur saisie
-        // Bonus par palier franchi (2x, 3x, etc.)
-        const prevMult=prev<b?1:Math.floor(prev/b); // palier actuel avant saisie
-        const nextMult=Math.floor(next/b); // palier après saisie
+        // XP sur la totalité du cumul depuis le début
+        const xpNext=next*obj.xpPer;
+        // Déduire l'XP déjà accordé (sur le prev, mais seulement si prev>=b)
+        const xpPrev=prev>=b?prev*obj.xpPer:0;
+        xp=xpNext-xpPrev;
+        // Bonus par palier supplémentaire franchi (2x, 3x, etc.)
+        const prevMult=prev<b?1:Math.floor(prev/b);
+        const nextMult=Math.floor(next/b);
         for(let m=Math.max(2,prevMult+1);m<=nextMult;m++){
-          xp+=b*obj.xpPer; // +1 objectif de bonus par palier
+          xp+=b*obj.xpPer;
         }
       }
     }
@@ -688,7 +693,12 @@ function App(){
     }
     else{const nt=cur+val; const b=getRankBase(obj.id,ri,prestige); if(cur>=b)xp=val*obj.xpPer; else if(nt<=b)xp=val*obj.xpPer; else xp=val*obj.xpPer;}
     setState(s=>{
-      if(obj.weekly||obj.id==="walk"){const w={...s.weeklyLog};w[wk]={...(w[wk]||{}),[obj.id]:(w[wk]?.[obj.id]||0)+val};return{...s,weeklyLog:w,lastActiveDay:todayStr()};}
+      if(obj.weekly||obj.id==="walk"){
+        const w={...s.weeklyLog};w[wk]={...(w[wk]||{}),[obj.id]:(w[wk]?.[obj.id]||0)+val};
+        // Stocker aussi dans dailyLog pour l'XP du jour
+        const d2={...s.dailyLog};d2[today]={...(d2[today]||{}),[obj.id]:(d2[today]?.[obj.id]||0)+val};
+        return{...s,weeklyLog:w,dailyLog:d2,lastActiveDay:todayStr()};
+      }
       const d={...s.dailyLog};d[today]={...(d[today]||{}),[obj.id]:(d[today]?.[obj.id]||0)+val};return{...s,dailyLog:d,lastActiveDay:todayStr()};
     });
     if(xp>0){
