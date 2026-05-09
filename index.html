@@ -167,9 +167,9 @@ const DEFS = [
   {id:"squats", name:"Squats",         unit:"rep", xpPer:1,  daily:true, weekly:false,optional:false,stat:"Force",    icon:"\uD83E\uDDBF",              base:15, stat2:"Endurance"},
   {id:"calves", name:"Extensions mollets", unit:"rep", xpPer:0.5, daily:true, weekly:false,optional:false,stat:"Force", icon:"\uD83E\uDDBF",              base:30, stat2:"Endurance", xpPer2:0.5},
   {id:"reading",name:"Lecture",        unit:"page",xpPer:10, daily:true, weekly:false,optional:false,stat:"Esprit",   icon:"\uD83D\uDCDA",              base:10},
-  {id:"sleep",  name:"8h de sommeil",  unit:"nuit", xpPer:0,  daily:true, weekly:false,optional:false,stat:"Vitalite", icon:"\uD83D\uDECF\uFE0F",        base:1, binary:true, binaryXp:100},
-  {id:"nosugar",name:"Pas de sucres transform\u00e9s", unit:"jour", xpPer:0, daily:true, weekly:false,optional:false,stat:"Vitalite", icon:"\uD83D\uDEAB", base:1, binary:true, binaryXp:200},
-  {id:"protein", name:"Barre + fruit", unit:"repas", xpPer:0, daily:true, weekly:false,optional:false,stat:"Vitalite", icon:"\uD83C\uDF4F",              base:1, binary:true, binaryXp:100, startDate:"2026-04-20"},
+  {id:"sleep",  name:"8h de sommeil",  unit:"nuit", xpPer:0,  daily:true, weekly:false,optional:true, stat:"Vitalite", icon:"\uD83D\uDECF\uFE0F",        base:1, binary:true, binaryXp:200},
+  {id:"nosugar",name:"Pas de sucres transform\u00e9s", unit:"jour", xpPer:0, daily:true, weekly:false,optional:true, stat:"Vitalite", icon:"\uD83D\uDEAB", base:1, binary:true, binaryXp:200},
+  {id:"protein", name:"Barre + fruit", unit:"repas", xpPer:0, daily:true, weekly:false,optional:true, stat:"Vitalite", icon:"\uD83C\uDF4F",              base:1, binary:true, binaryXp:200, startDate:"2026-04-20"},
   {id:"water",  name:"Hydratation",    unit:"verre",xpPer:5, daily:true, weekly:false,optional:false,stat:"Vitalite", icon:"\uD83D\uDCA7",              base:10},
   {id:"run",    name:"Course",         unit:"km",   xpPer:50, daily:false,weekly:true, optional:false,stat:"Endurance",icon:"\uD83C\uDFC3\uD83C\uDFFB",  base:7},
   {id:"med",    name:"M\u00e9ditation",unit:"min",  xpPer:10, daily:true, weekly:false,optional:true, stat:"Esprit",   icon:"\uD83E\uDDD8\uD83C\uDFFB",  base:15},
@@ -1199,7 +1199,7 @@ function App(){
                 h("div",{style:"font-size:12px;color:var(--tx);margin-bottom:3px;display:flex;justify-content:space-between"},
                   h("span",{style:"display:flex;align-items:center;gap:6px"},
                     obj.name,
-  
+                    obj.optional&&h("span",{style:"font-size:9px;color:#fbbf24;font-family:Orbitron,sans-serif;border:1px solid #fbbf2455;border-radius:4px;padding:1px 4px"},"BONUS")
                   ),
                   h("span",{style:"font-family:Orbitron,sans-serif;font-size:10px"},successes+"/7 "+(obj.id==="sleep"?"nuits":"jours"))
                 ),
@@ -1276,7 +1276,7 @@ function App(){
         });
         const displayObjs=[...sortStat(objs.filter(o=>o.daily&&!o.optional&&!o.binary)),...(restMode&&walkObj?[...sortStat(objs.filter(o=>o.weekly&&!o.binary)),walkObj]:sortStat(objs.filter(o=>o.weekly&&!o.binary))),...sortStat(objs.filter(o=>(o.daily&&o.optional||o.id==="walk")&&!o.binary&&!(restMode&&o.id==="walk")))];
         return h("div",{class:"card"},
-          h("div",{class:"ctitle"},"\u03A3 Totaux depuis le d\u00e9but"+(firstDay?" \u2014 "+fmtFirst(firstDay):"")),
+          h("div",{class:"ctitle"},"\uD83E\uDDEE Totaux depuis le d\u00e9but"+(firstDay?" \u2014 "+fmtFirst(firstDay):"")),
           displayObjs.map(o=>{
             const total=totals[o.id]||0;
             const unitLbl=total>1?({rep:"reps",page:"pages",verre:"verres",km:"km",min:"min"}[o.unit]||o.unit):o.unit;
