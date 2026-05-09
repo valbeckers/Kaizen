@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -825,16 +826,22 @@ function App(){
             h("div",{class:"qxp"},d+"/"+t+" "+((d>1||t>1)&&{rep:"reps",page:"pages",verre:"verres"}[obj.unit]||obj.unit))
           )
       ),
-      h("div",{class:"qinrow"},
-        obj.id==="water"&&h("button",{class:"qbtn",style:"flex:0;padding:8px 14px;font-size:16px",onClick:e=>{inputs.current[obj.id]="1";validate(obj,e);}},"+1 \uD83D\uDCA7"),
-        h("input",{class:"qin",type:"text",inputMode:"decimal",placeholder:"+ "+obj.unit,id:"qi_"+obj.id,onInput:ev=>{inputs.current[obj.id]=ev.target.value;}}),
-        h("button",{class:"qbtn",onClick:e=>{
-          const el=document.getElementById("qi_"+obj.id);
-          if(el)inputs.current[obj.id]=el.value;
-          validate(obj,e);
-          if(el)el.value="";
-        }},"+XP")
-      ),
+      obj.id==="water"
+        ? h("div",{style:"margin-top:8px"},
+            h("button",{
+              onClick:e=>{inputs.current[obj.id]="1";validate(obj,e);},
+              style:"width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);color:rgba(255,255,255,0.7);font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer;letter-spacing:1px;transition:all .2s"
+            },"+1 verre \uD83D\uDCA7")
+          )
+        : h("div",{class:"qinrow"},
+            h("input",{class:"qin",type:"text",inputMode:"decimal",placeholder:"+ "+obj.unit,id:"qi_"+obj.id,onInput:ev=>{inputs.current[obj.id]=ev.target.value;}}),
+            h("button",{class:"qbtn",onClick:e=>{
+              const el=document.getElementById("qi_"+obj.id);
+              if(el)inputs.current[obj.id]=el.value;
+              validate(obj,e);
+              if(el)el.value="";
+            }},"+XP")
+          ),
 
     );
   }
@@ -1251,7 +1258,44 @@ function App(){
               (rec.val%1===0?rec.val:rec.val.toFixed(1))+" "+((rec.val>1)&&{rep:"reps",page:"pages",verre:"verres"}[o.unit]||o.unit))
           );
         })
-      )
+      ),
+      // Totaux depuis le début
+      (()=>{
+        // Trouver la première date d'utilisation
+        const allDays=Object.keys(state.dailyLog).sort();
+        const allWks=Object.keys(state.weeklyLog).sort();
+        const firstDay=allDays.length>0?allDays[0]:null;
+        const fmtFirst=d=>{if(!d)return"";const p=d.split("-");return p[2]+"/"+p[1]+"/"+p[0];};
+        // Calculer les totaux
+        const totals={};
+        Object.values(state.dailyLog).forEach(log=>{
+          Object.entries(log).forEach(([id,val])=>{totals[id]=(totals[id]||0)+val;});
+        });
+        Object.values(state.weeklyLog).forEach(log=>{
+          Object.entries(log).forEach(([id,val])=>{totals[id]=(totals[id]||0)+val;});
+        });
+        const displayObjs=[...sortStat(objs.filter(o=>o.daily&&!o.optional&&!o.binary)),...(restMode&&walkObj?[...sortStat(objs.filter(o=>o.weekly&&!o.binary)),walkObj]:sortStat(objs.filter(o=>o.weekly&&!o.binary))),...sortStat(objs.filter(o=>(o.daily&&o.optional||o.id==="walk")&&!o.binary&&!(restMode&&o.id==="walk")))];
+        return h("div",{class:"card"},
+          h("div",{class:"ctitle"},"\u03A3 Totaux depuis le d\u00e9but"+(firstDay?" \u2014 "+fmtFirst(firstDay):"")),
+          displayObjs.map(o=>{
+            const total=totals[o.id]||0;
+            const unitLbl=total>1?({rep:"reps",page:"pages",verre:"verres",km:"km",min:"min"}[o.unit]||o.unit):o.unit;
+            return h("div",{key:o.id,style:"display:flex;align-items:center;gap:10px;margin-bottom:8px"+(total===0?";opacity:.35":"")},
+              h("span",{style:"font-size:16px"},o.icon),
+              h("div",{style:"flex:1"},
+                h("div",{style:"font-size:12px;color:var(--tx);display:flex;align-items:center;gap:5px"},
+                  o.name,
+                  (o.weekly||o.id==="walk")&&h("span",{style:"font-size:9px;color:#818cf8;font-family:Orbitron,sans-serif;border:1px solid #818cf855;border-radius:4px;padding:1px 4px"},"HEBDO"),
+                  o.optional&&o.id!=="walk"&&h("span",{style:"font-size:9px;color:#fbbf24;font-family:Orbitron,sans-serif;border:1px solid #fbbf2455;border-radius:4px;padding:1px 4px"},"BONUS"),
+                  o.id==="walk"&&h("span",{style:"font-size:9px;color:#fbbf24;font-family:Orbitron,sans-serif;border:1px solid #fbbf2455;border-radius:4px;padding:1px 4px;margin-left:2px"},"BONUS")
+                )
+              ),
+              h("span",{style:"font-family:Orbitron,sans-serif;font-size:10px;color:var(--tx)"},
+                total===0?"—":(total%1===0?total:total.toFixed(1))+(total>0?" "+unitLbl:""))
+            );
+          })
+        );
+      })()
     );
   }
 
