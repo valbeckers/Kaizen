@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -296,7 +294,9 @@ const loadState  = () => {
 };
 const saveState  = s  => {
   try{
-    localStorage.setItem("sl_v3",JSON.stringify(s));
+    // On n'enregistre jamais "objectives" — les DEFS du code ont toujours priorité
+    const {objectives, ...toSave} = s;
+    localStorage.setItem("sl_v3",JSON.stringify(toSave));
     localStorage.setItem("sl_version",IMPORTED_VERSION);
   }catch{}
 };
@@ -504,18 +504,18 @@ function App(){
       : null;
   })() : null;
 
-  // Semaine validée si : course atteinte OU (restMode ET marche atteinte)
+  // Semaine validée si : quêtes journalières OK sur les jours passés + course atteinte
   const weeklyDone = (()=>{
     const ws=new Date(); ws.setDate(ws.getDate()-((ws.getDay()+6)%7)); ws.setHours(0,0,0,0);
     const days=Array.from({length:7},(_,i)=>{const d=new Date(ws);d.setDate(ws.getDate()+i);return d.toISOString().slice(0,10);});
-    if(days.some(d=>d>today))return false;
-    const dailyOk=reqDailyObjs.every(o=>days.every(d=>activeOn(d).indexOf(o)<0||(state.dailyLog[d]?.[o.id]||0)>=getRankBase(o.id,ri,prestige)));
+    const pastDays=days.filter(d=>d<=today);
+    if(pastDays.length===0)return false;
+    const dailyOk=reqDailyObjs.every(o=>pastDays.every(d=>activeOn(d).indexOf(o)<0||(state.dailyLog[d]?.[o.id]||0)>=getRankBase(o.id,ri,prestige)));
     if(!dailyOk)return false;
     const runBase=getRankBase("run",ri,prestige);
     const runDone=wLog["run"]||0;
     if(runDone>=runBase)return true;
     if(restMode&&walkObj){
-      // Crédit course = km marche × 2
       const walkDone=wLog["walk"]||0;
       const runCredit=walkDone*2;
       return (runDone+runCredit)>=runBase || walkDone>=walkObj.base;
