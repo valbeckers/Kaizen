@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -173,7 +175,7 @@ const DEFS = [
   {id:"med",    name:"M\u00e9ditation",unit:"min",  xpPer:10, daily:true, weekly:false,optional:true, stat:"Esprit",   icon:"\uD83E\uDDD8\uD83C\uDFFB",  base:15},
   {id:"flex",   name:"Souplesse",      unit:"min",  xpPer:5,  daily:true, weekly:false,optional:true, stat:"Vitalite", icon:"\uD83E\uDD38\uD83C\uDFFB",  base:15, stat2:"Endurance", xpPer2:5},
   {id:"walk",   name:"Marche",         unit:"km",   xpPer:25, daily:false,weekly:false,optional:true, stat:"Endurance",icon:"\uD83D\uDEB6\uD83C\uDFFB\u200D\u2642\uFE0F",              base:5},
-  {id:"grips",  name:"Hand grips",     unit:"min",  xpPer:10, daily:true, weekly:false,optional:true, stat:"Force",    icon:"\u270A\uD83C\uDFFB",        base:10, stat2:"Endurance", xpPer2:5},
+  {id:"grips",  name:"Hand grips",     unit:"min",  xpPer:5, daily:true, weekly:false,optional:true, stat:"Force",    icon:"\u270A\uD83C\uDFFB",        base:10, stat2:"Endurance", xpPer2:5},
 ];
 
 // Quetes speciales — par stat
@@ -707,14 +709,26 @@ function App(){
     });
     if(xp>0){
       if(obj.stat2&&obj.xpPer2){
-        // Double stat avec XP différents (flex:5+5, grips:10+5)
+        // Double stat avec XP différents (flex:5+5, grips:5+5)
         const xp2=Math.round(xp*(obj.xpPer2/obj.xpPer));
-        addXp(xp,obj.stat,e,false,obj.stat);
-        addXp(xp2,obj.stat2,null,true,obj.stat2);
+        const id1=Date.now()+Math.random(), id2=id1+0.01;
+        setFloats(f=>[...f,
+          {id:id1,y:"38%",txt:"+"+Math.round(xp)+" XP "+(STAT_LBL2[obj.stat]||obj.stat)},
+          {id:id2,y:"41%",txt:"+"+Math.round(xp2)+" XP "+(STAT_LBL2[obj.stat2]||obj.stat2)}
+        ]);
+        setTimeout(()=>setFloats(f=>f.filter(p=>p.id!==id1&&p.id!==id2)),2300);
+        addXp(xp,obj.stat,null,true);
+        addXp(xp2,obj.stat2,null,true);
       } else if(obj.stat2){
         // Double stat même XP (squats)
-        addXp(xp,obj.stat,e,false,obj.stat);
-        addXp(xp,obj.stat2,null,true,obj.stat2);
+        const id1=Date.now()+Math.random(), id2=id1+0.01;
+        setFloats(f=>[...f,
+          {id:id1,y:"38%",txt:"+"+Math.round(xp)+" XP "+(STAT_LBL2[obj.stat]||obj.stat)},
+          {id:id2,y:"41%",txt:"+"+Math.round(xp)+" XP "+(STAT_LBL2[obj.stat2]||obj.stat2)}
+        ]);
+        setTimeout(()=>setFloats(f=>f.filter(p=>p.id!==id1&&p.id!==id2)),2300);
+        addXp(xp,obj.stat,null,true);
+        addXp(xp,obj.stat2,null,true);
       } else {
         addXp(xp,obj.stat,e,false,obj.stat);
       }
@@ -815,7 +829,12 @@ function App(){
         h("div",{style:"font-size:9px;color:var(--td);font-family:Orbitron,sans-serif;letter-spacing:0.5px;text-align:right"},
           obj.binary
             ?(obj.binaryXp+" XP · "+(STAT_LBL[obj.stat]||obj.stat))
-            :(obj.xpPer+" XP/"+obj.unit+" · "+(STAT_LBL[obj.stat]||obj.stat)+(obj.stat2?" + "+(STAT_LBL[obj.stat2]||obj.stat2):""))
+            :obj.stat2
+              ?h(Fragment,null,
+                  h("div",null,obj.xpPer+" XP/"+obj.unit+" · "+(STAT_LBL[obj.stat]||obj.stat)),
+                  h("div",null,(obj.xpPer2||obj.xpPer)+" XP/"+obj.unit+" · "+(STAT_LBL[obj.stat2]||obj.stat2))
+                )
+              :(obj.xpPer+" XP/"+obj.unit+" · "+(STAT_LBL[obj.stat]||obj.stat))
         )
       ),
       h("div",{class:"qrow"},
@@ -824,22 +843,35 @@ function App(){
             h("div",{class:"qxp"},d+"/"+t+" "+((d>1||t>1)&&{rep:"reps",page:"pages",verre:"verres"}[obj.unit]||obj.unit))
           )
       ),
-      obj.id==="water"
-        ? h("div",{style:"margin-top:8px"},
+      (()=>{
+        const QUICK_IDS=["push","abs","squats","calves","reading","flex","grips","med","water"];
+        const unitLabel={push:"rep",abs:"rep",squats:"rep",calves:"rep",reading:"page",flex:"min",grips:"min",med:"min",water:"verre"};
+        const unitLabelPlural={push:"reps",abs:"reps",squats:"reps",calves:"reps",reading:"pages",flex:"min",grips:"min",med:"min",water:"verres"};
+        if(QUICK_IDS.includes(obj.id)){
+          const lbl=unitLabel[obj.id]||obj.unit;
+          const lblPl=unitLabelPlural[obj.id]||obj.unit;
+          const isWater=obj.id==="water";
+          return h("div",{style:"display:flex;gap:8px;margin-top:8px"},
             h("button",{
               onClick:e=>{inputs.current[obj.id]="1";validate(obj,e);},
-              style:"width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);color:rgba(255,255,255,0.7);font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer;letter-spacing:1px;transition:all .2s"
-            },"+1 verre \uD83D\uDCA7")
-          )
-        : h("div",{class:"qinrow"},
-            h("input",{class:"qin",type:"text",inputMode:"decimal",placeholder:"+ "+obj.unit,id:"qi_"+obj.id,onInput:ev=>{inputs.current[obj.id]=ev.target.value;}}),
-            h("button",{class:"qbtn",onClick:e=>{
-              const el=document.getElementById("qi_"+obj.id);
-              if(el)inputs.current[obj.id]=el.value;
-              validate(obj,e);
-              if(el)el.value="";
-            }},"+XP")
-          ),
+              style:"flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);color:rgba(255,255,255,0.7);font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer;letter-spacing:1px;transition:all .2s"
+            },"+1 "+lbl+(isWater?" \uD83D\uDCA7":"")),
+            !isWater&&h("button",{
+              onClick:e=>{inputs.current[obj.id]="10";validate(obj,e);},
+              style:"flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);color:rgba(255,255,255,0.7);font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer;letter-spacing:1px;transition:all .2s"
+            },"+10 "+lblPl)
+          );
+        }
+        return h("div",{class:"qinrow"},
+          h("input",{class:"qin",type:"text",inputMode:"decimal",placeholder:"+ "+obj.unit,id:"qi_"+obj.id,onInput:ev=>{inputs.current[obj.id]=ev.target.value;}}),
+          h("button",{class:"qbtn",onClick:e=>{
+            const el=document.getElementById("qi_"+obj.id);
+            if(el)inputs.current[obj.id]=el.value;
+            validate(obj,e);
+            if(el)el.value="";
+          }},"+XP")
+        );
+      })()
 
     );
   }
@@ -1203,7 +1235,7 @@ function App(){
                 ),
                 h("div",{class:"qbar"},h("div",{class:"qfill"+(complete?" done":successes>0?" partial":""),style:"width:"+pct+"%"}))
               ),
-              complete&&h("span",{style:"font-size:22px"},"✅")
+              complete&&h("span",{style:"font-family:Orbitron,sans-serif;font-size:14px;font-weight:700;color:#4ade80"},"\u2713")
             );
           }
           const val=tots[obj.id]||0, wt=obj.weekly?(obj.id==="walk"&&restMode&&walkObj?walkObj.base:getRankBase(obj.id,ri)):obj.id==="walk"?obj.base:getRankBase(obj.id,ri,prestige)*7;
@@ -1225,7 +1257,7 @@ function App(){
               ),
               h("div",{class:"qbar"},h("div",{class:"qfill"+(over?" over":complete?" done":pct>0?" partial":""),style:"width:"+pct+"%"}))
             ),
-            complete&&h("span",{style:"font-size:22px"},"✅")
+            complete&&h("span",{style:"font-family:Orbitron,sans-serif;font-size:14px;font-weight:700;color:#4ade80"},"\u2713")
           );
         }),
         ordered.every(o=>!(tots[o.id]>0))&&h("div",{style:"text-align:center;font-size:13px;color:var(--td);padding:16px 0"},"Aucune activit\u00e9 cette semaine")
