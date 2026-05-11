@@ -504,7 +504,46 @@ const o=objs.find(x=>x.id===id); return s+(o?calcXp(o,a):0);
 const reqDailyObjs = objs.filter(o=>!o.optional&&o.daily);
 // Quêtes actives pour un jour donné (exclut les quêtes ajoutées après ce jour)
 const activeOn = (day) => reqDailyObjs.filter(o=>!o.startDate||o.startDate<=day);
-const allDailyDone = reqDailyObjs.every(o=>(tLog[o.id]||0)>=getRankBase(o.id,ri,prestige));
+
+// 7b. Système de dette : vérifier si hier il y avait des quêtes manquées
+const yesterday = (()=>{ const d=new Date(today); d.setDate(d.getDate()-1); return d.toISOString().slice(0,10); })();
+const reqWeeklyObjs = objs.filter(o=>!o.optional&&o.weekly);
+const debtObjs = (()=>{
+// Quêtes journalières obligatoires non-binaires manquées hier
+const yLog = state.dailyLog[yesterday]||{};
+const yWk = wkStr(new Date(yesterday));
+const yWLog = state.weeklyLog[yWk]||{};
+const missed = [];
+// Journalières
+activeOn(yesterday).filter(o=>!o.binary).forEach(o=>{
+const done = yLog[o.id]||0;
+const target = getRankBase(o.id,ri,prestige);
+if(done < target) missed.push(o.id);
+});
+// Hebdomadaires (seulement si hier était dans la même semaine ISO)
+const todayWk = wkStr();
+if(yWk === todayWk){
+reqWeeklyObjs.filter(o=>!o.binary).forEach(o=>{
+// La dette hebdo ne se calcule que si la semaine est déjà commencée depuis au moins 1 jour
+const yDone = yWLog[o.id]||0;
+const target = getRankBase(o.id,ri,prestige);
+if(yDone < target) missed.push(o.id);
+});
+}
+return missed;
+})();
+
+// La dette est active si : il y a des quêtes manquées hier ET le streak n'a pas déjà été perdu hier
+const debtActive = debtObjs.length > 0 && state.streak > 0 && state.lastActiveDay === yesterday;
+
+// Objectif effectif = normal OU ×1.5 si dette active sur cette quête
+function getEffectiveTarget(objId){
+const base = getRankBase(objId, ri, prestige);
+if(debtActive && debtObjs.includes(objId)) return Math.ceil(base * 1.5);
+return base;
+}
+
+const allDailyDone = reqDailyObjs.every(o=>(tLog[o.id]||0)>=getEffectiveTarget(o.id));
 
 // 8. Streak : calculé depuis dailyLog mais ne descend jamais sous le streak sauvegardé si hier était complet
 const computedStreak = (()=>{
@@ -544,7 +583,7 @@ const ws=new Date(); ws.setDate(ws.getDate()-((ws.getDay()+6)%7)); ws.setHours(0
 const days=Array.from({length:7},(_,i)=>{const d=new Date(ws);d.setDate(ws.getDate()+i);return d.toISOString().slice(0,10);});
 const pastDays=days.filter(d=>d<=today);
 if(pastDays.length===0)return false;
-const dailyOk=reqDailyObjs.every(o=>pastDays.every(d=>activeOn(d).indexOf(o)<0||(state.dailyLog[d]?.[o.id]||0)>=getRankBase(o.id,ri,prestige)));
+const dailyOk=reqDailyObjs.every(o=>pastDays.every(d=>activeOn(d).indexOf(o)<0||(state.dailyLog[d]?.[o.id]||0)>=getEffectiveTarget(o.id)));
 if(!dailyOk)return false;
 const runBase=getRankBase("run",ri,prestige);
 const runDone=wLog["run"]||0;
@@ -785,7 +824,8 @@ if(d>0)return d+"j "+hh+"h"; if(hh>0)return hh+"h "+mm+"min"; return mm+"min";
 // ─── SOUS-COMPOSANTS ──────────────────────────────────────────────────
 
 function QI({obj}){
-const t=obj.base&&!RANK_BASES[obj.id]?obj.base:getRankBase(obj.id,ri,prestige), d=(obj.weekly||obj.id==="walk")?(wLog[obj.id]||0):(tLog[obj.id]||0);
+const t=getEffectiveTarget(obj.id), d=(obj.weekly||obj.id==="walk")?(wLog[obj.id]||0):(tLog[obj.id]||0);
+const isDebt = debtActive && debtObjs.includes(obj.id);
 const done=obj.binary?(d>=1):(d>=t);
 
 // Quêtes binaires : boutons Échec / Succès
@@ -836,9 +876,9 @@ style:"flex:"+succFlex+";padding:"+(validated&&!done?"6px 4px":"10px")+";border-
 }
 
 const pct=(d/t)*100, over=d>t;
-return h("div",{class:"qi "+(d>=t&&t>0?"done":"")},
+return h("div",{class:"qi "+(d>=t&&t>0?"done":""),style:isDebt&&!done?"border-color:#ef444466;background:rgba(239,68,68,0.04)":""},
 h("div",{class:"qhdr",style:"display:flex;justify-content:space-between;align-items:center"},
-h("div",{class:"qname"},h("span",null,obj.icon)," ",obj.name),
+h("div",{class:"qname"},h("span",null,obj.icon)," ",obj.name,isDebt&&!done&&h("span",{style:"font-size:9px;color:#ef4444;font-family:Orbitron,sans-serif;border:1px solid #ef444455;border-radius:4px;padding:1px 5px;margin-left:6px"},"\u26A0 DETTE")),
 h("div",{style:"font-size:9px;color:var(--td);font-family:Orbitron,sans-serif;letter-spacing:0.5px;text-align:right"},
 obj.binary
 ?(obj.binaryXp+" XP · "+(STAT_LBL[obj.stat]||obj.stat))
@@ -853,7 +893,7 @@ h("div",null,(obj.xpPer2||obj.xpPer)+" XP/"+obj.unit+" · "+(STAT_LBL[obj.stat2]
 h("div",{class:"qrow"},
 h(Fragment,null,
 h("div",{class:"qbar"},h("div",{class:"qfill"+(over?" over":done?" done":pct>0?" partial":""),style:"width:"+Math.min(100,pct)+"%"})),
-h("div",{class:"qxp"},d+"/"+t+" "+((d>1||t>1)&&{rep:"reps",page:"pages",verre:"verres"}[obj.unit]||obj.unit))
+h("div",{class:"qxp",style:isDebt&&!done?"color:#ef4444":""},d+"/"+t+" "+((d>1||t>1)&&{rep:"reps",page:"pages",verre:"verres"}[obj.unit]||obj.unit))
 )
 ),
 (()=>{
