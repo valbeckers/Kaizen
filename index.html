@@ -252,7 +252,7 @@ unit:"jour", target:7, desc:"Se lever \u00e0 la m\u00eame heure 7 jours de suite
 {id:"ep_medweek", tier:"mineure", name:"M\u00e9ditation quotidienne", icon:"\uD83E\uDDD8\uD83C\uDFFB\u200D\u2642\uFE0F", stat:"Concentration", xp:1000, days:7, streak7:true,
 unit:"jour", target:7, desc:"M\u00e9diter chaque jour pendant 7 jours"},
 // ── MAJEURES ─────────────────────────────────────────────────────────────
-{id:"ep_book", tier:"majeure", name:"Lecture marathon (300+ pages)", icon:"\uD83D\uDCDA", stat:"Intelligence", xp:1000, xp2:500, stat2:"Concentration", days:7, binary:true,
+{id:"ep_book", tier:"majeure", name:"Lire un livre complet", icon:"\uD83D\uDCDA", stat:"Intelligence", xp:1000, xp2:500, stat2:"Concentration", days:7, binary:true,
 desc:"Terminer un livre de 300 pages ou plus"},
 {id:"ep_coldweek", tier:"majeure", name:"Douche froide 10min quotidienne", icon:"\u2744\uFE0F", stat:"Discipline", xp:1500, days:7, streak7:true,
 unit:"jour", target:7, desc:"10 min de douche froide chaque jour pendant 7 jours"},
@@ -1127,7 +1127,9 @@ const done = ep.completedAt;
 const failed = ep.failedAt;
 const vals = ep.dailyValidations||[];
 const todayValidated = vals.includes(today);
-const pct = ep.streak7 ? Math.min(100,(vals.length/7)*100) : Math.min(100,(ep.progress/ep.target)*100);
+const pct = ep.streak7 ? Math.min(100,(vals.length/7)*100) : ep.binary ? (done?100:0) : Math.min(100,((ep.progress||0)/(ep.target||1))*100);
+const barInProgress = !done && !failed && pct > 0;
+const barStyle = done?"width:100%;background:"+tierColor:failed?"width:100%;background:#ef4444;opacity:0.4":barInProgress?"width:"+pct+"%;background:repeating-linear-gradient(45deg,"+tierColor+","+tierColor+" 4px,"+tierColor+"44 4px,"+tierColor+"44 8px)":"width:0%";
 
 function completeEp(val){
 if(done||failed) return;
@@ -1171,29 +1173,32 @@ h("div",{style:"display:flex;justify-content:space-between;align-items:flex-star
 h("div",{style:"display:flex;align-items:center;gap:8px"},
 h("span",{style:"font-size:20px"},ep.icon),
 h("div",null,
-h("div",{style:"font-size:13px;font-weight:700;color:var(--tx)"},ep.name),
-h("div",{style:"font-size:9px;font-family:Orbitron,sans-serif;color:"+tierColor+";letter-spacing:1px;margin-top:2px"},"\u00c9PREUVE "+tierLabel)
+h("div",{style:"font-size:13px;font-weight:700;color:var(--tx)"},ep.name)
 )
 ),
 h("div",{style:"text-align:right"},
 done?h("div",{style:"font-family:Orbitron,sans-serif;font-size:11px;color:#4ade80"},"\u2713 VALID\u00c9E")
 :failed?h("div",{style:"font-family:Orbitron,sans-serif;font-size:11px;color:#ef4444"},"\u2718 \u00c9CHOU\u00c9E")
 :h(Fragment,null,
-h("div",{style:"font-family:Orbitron,sans-serif;font-size:11px;color:"+tierColor},fmtCD(remaining)),
-h("div",{style:"font-size:9px;color:var(--td)"},"restants")
+ep.xp2
+? h(Fragment,null,
+h("div",{style:"font-size:10px;color:var(--td);font-family:Orbitron,sans-serif"},ep.xp+" XP \u00b7 "+(STAT_LBL[ep.stat]||ep.stat)),
+h("div",{style:"font-size:10px;color:var(--td);font-family:Orbitron,sans-serif"},ep.xp2+" XP \u00b7 "+(STAT_LBL[ep.stat2]||ep.stat2)),
+ep.xp3&&h("div",{style:"font-size:10px;color:var(--td);font-family:Orbitron,sans-serif"},ep.xp3+" XP \u00b7 "+(STAT_LBL[ep.stat3]||ep.stat3))
+)
+: h("div",{style:"font-size:10px;color:var(--td);font-family:Orbitron,sans-serif"},ep.xp+" XP \u00b7 "+(STAT_LBL[ep.stat]||ep.stat))
 )
 )
 ),
 // Barre progression
 h("div",{class:"sqbar",style:"background:"+tierColor+"22"},
-h("div",{class:"sqbarfill",style:"width:"+pct+"%;background:"+tierColor})
+h("div",{class:"sqbarfill",style:barStyle})
 ),
 h("div",{style:"display:flex;justify-content:space-between;font-size:10px;color:var(--td);margin-top:4px"},
 ep.streak7
 ? h("span",null,vals.length+"/7 jours valid\u00e9s"+(todayValidated?" \u2713":""))
 : h("span",null,(ep.binary?"":ep.progress+"/"+ep.target+" "+ep.unit)),
-h("span",{style:"color:"+tierColor+";font-family:Orbitron,sans-serif"},
-"+"+(ep.xp||0)+(ep.xp2?"+"+ep.xp2:"")+(ep.xp3?"+"+ep.xp3:"")+" XP")
+!done&&!failed&&h("span",{style:"color:"+tierColor+";font-family:Orbitron,sans-serif"},"\u23F1 "+fmtCD(remaining)+" restants")
 ),
 // Boutons action
 !done&&!failed&&showInput&&(
@@ -1239,18 +1244,22 @@ h("div",{style:"display:flex;justify-content:space-between;align-items:flex-star
 h("div",{style:"display:flex;align-items:center;gap:8px"},
 h("span",{style:"font-size:18px"},sq.icon),
 h("div",null,
-h("div",{style:"font-size:13px;font-weight:700;color:var(--tx)"},sq.name),
+h("div",{style:"font-size:13px;font-weight:700;color:var(--tx)"},sq.name)
 )
 ),
 h("div",{style:"text-align:right"},
-h("div",{style:"font-family:Orbitron,sans-serif;font-size:11px;color:"+(urgent?"#ef4444":"#ef4444bb")},fmtCD(remaining)),
-h("div",{style:"font-size:9px;color:var(--td)"},"restants")
+sq.xp2&&sq.stat2
+? h(Fragment,null,
+h("div",{style:"font-size:10px;color:var(--td);font-family:Orbitron,sans-serif"},"+"+sq.xp+" XP \u00b7 "+(STAT_LBL[sq.stat]||sq.stat)),
+h("div",{style:"font-size:10px;color:var(--td);font-family:Orbitron,sans-serif"},"+"+sq.xp2+" XP \u00b7 "+(STAT_LBL[sq.stat2]||sq.stat2))
+)
+: h("div",{style:"font-size:10px;color:var(--td);font-family:Orbitron,sans-serif"},sq.xp+" XP \u00b7 "+(STAT_LBL[sq.stat]||sq.stat))
 )
 ),
 h("div",{class:"sqbar"},h("div",{class:"sqbarfill",style:"width:"+pct+"%"})),
-h("div",{style:"display:flex;justify-content:space-between;font-size:10px;color:var(--td)"},
+h("div",{style:"display:flex;justify-content:space-between;font-size:10px;color:var(--td);margin-top:4px"},
 h("span",null,sq.progress+"/"+sq.target+" "+sq.unit),
-h("span",{style:"color:#ef4444;font-family:Orbitron,sans-serif"},"+"+sq.xp+" XP \u00b7 "+(STAT_LBL[sq.stat]||sq.stat))
+!done&&h("span",{style:"color:"+(urgent?"#ef4444":"#ef4444bb")+";font-family:Orbitron,sans-serif"},"\u23F1 "+fmtCD(remaining)+" restants")
 ),
 showInput&&!done&&(
 sq.binary
@@ -1332,7 +1341,7 @@ h("div",{style:"font-size:10px;color:var(--td);text-transform:uppercase;letter-s
 )
 ),
 h("div",{class:"card",style:"border-color:#f59e0b44"},
-h("div",{class:"ctitle",style:"color:#f59e0b;margin-bottom:8px"},"\uD83D\uDD31 \u00c9preuve"),
+h("div",{class:"ctitle",style:"color:"+(activeEp?{mineure:"#fbbf24",majeure:"#f59e0b",legendaire:"#f97316"}[activeEp.tier]||"#f59e0b":"#f59e0b")+";margin-bottom:8px"},"\uD83D\uDD31 \u00c9preuve"+(activeEp?" · "+({mineure:"Mineure",majeure:"Majeure",legendaire:"Légendaire"}[activeEp.tier]||""):"")),
 activeEp
 ? h(EpCard,{ep:activeEp,showInput:false})
 : cooldownActive
@@ -1360,7 +1369,7 @@ const wkq=restMode&&walkObj
 return h("div",{class:"tab"},
 // ── ÉPREUVE ────────────────────────────────────────────────────────
 h("div",{class:"card",style:"border-color:#f59e0b44"},
-h("div",{class:"ctitle",style:"color:#f59e0b;margin-bottom:8px"},"\uD83D\uDD31 \u00c9preuve"),
+h("div",{class:"ctitle",style:"color:"+(activeEp?{mineure:"#fbbf24",majeure:"#f59e0b",legendaire:"#f97316"}[activeEp.tier]||"#f59e0b":"#f59e0b")+";margin-bottom:8px"},"\uD83D\uDD31 \u00c9preuve"+(activeEp?" · "+({mineure:"Mineure",majeure:"Majeure",legendaire:"Légendaire"}[activeEp.tier]||""):"")),
 activeEp
 ? h(EpCard,{ep:activeEp})
 : cooldownActive
