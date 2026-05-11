@@ -505,45 +505,82 @@ const reqDailyObjs = objs.filter(o=>!o.optional&&o.daily);
 // Quêtes actives pour un jour donné (exclut les quêtes ajoutées après ce jour)
 const activeOn = (day) => reqDailyObjs.filter(o=>!o.startDate||o.startDate<=day);
 
-// 7b. Système de dette : vérifier si hier il y avait des quêtes manquées
+// 7b. Système de dette
 const yesterday = (()=>{ const d=new Date(today); d.setDate(d.getDate()-1); return d.toISOString().slice(0,10); })();
 const reqWeeklyObjs = objs.filter(o=>!o.optional&&o.weekly);
-const debtObjs = (()=>{
-// Quêtes journalières obligatoires non-binaires manquées hier
+
+// Semaine précédente pour dette hebdo
+const prevWkDate = (()=>{ const d=new Date(today); d.setDate(d.getDate()-7); return d; })();
+const prevWk = wkStr(prevWkDate);
+
+const debt = (()=>{
+if(!state.lastActiveDay || state.lastActiveDay !== yesterday || state.streak <= 0) return {};
 const yLog = state.dailyLog[yesterday]||{};
 const yWk = wkStr(new Date(yesterday));
 const yWLog = state.weeklyLog[yWk]||{};
-const missed = [];
-// Journalières
-activeOn(yesterday).filter(o=>!o.binary).forEach(o=>{
-const done = yLog[o.id]||0;
-const target = getRankBase(o.id,ri,prestige);
-if(done < target) missed.push(o.id);
+const d = {};
+
+// 1. Sommeil : binaire → dette = 30min méditation le lendemain
+if((yLog["sleep"]||0) < 1) d["sleep_med"] = true;
+
+// 2. Eau : verres manquants s'ajoutent à l'objectif du lendemain
+const waterBase = getRankBase("water", ri, prestige);
+const waterDone = yLog["water"]||0;
+if(waterDone < waterBase) d["water_extra"] = waterBase - waterDone;
+
+// 3. Pompes, abdos, squats, lecture → ×1.5
+["push","abs","squats","reading"].forEach(id=>{
+const o = activeOn(yesterday).find(x=>x.id===id);
+if(!o) return;
+const done = yLog[id]||0;
+const target = getRankBase(id, ri, prestige);
+if(done < target) d[id] = true;
 });
-// Hebdomadaires (seulement si hier était dans la même semaine ISO)
+
+// 4. Course et Marche (mode blessure) → dette semaine suivante ×1.5
+// Vérifier si la semaine précédente est bien terminée (hier = dernier jour de la semaine passée)
 const todayWk = wkStr();
-if(yWk === todayWk){
-reqWeeklyObjs.filter(o=>!o.binary).forEach(o=>{
-// La dette hebdo ne se calcule que si la semaine est déjà commencée depuis au moins 1 jour
-const yDone = yWLog[o.id]||0;
-const target = getRankBase(o.id,ri,prestige);
-if(yDone < target) missed.push(o.id);
+if(yWk !== todayWk){
+// On vient de changer de semaine — vérifier les hebdos de la semaine passée
+reqWeeklyObjs.forEach(o=>{
+const done = yWLog[o.id]||0;
+const target = getRankBase(o.id, ri, prestige);
+if(done < target) d["weekly_"+o.id] = true;
 });
+if(restMode && walkObj){
+const wDone = yWLog["walk"]||0;
+const wTarget = walkObj.base;
+if(wDone < wTarget) d["weekly_walk"] = true;
 }
-return missed;
+}
+return d;
 })();
 
-// La dette est active si : il y a des quêtes manquées hier ET le streak n'a pas déjà été perdu hier
-const debtActive = debtObjs.length > 0 && state.streak > 0 && state.lastActiveDay === yesterday;
+const debtActive = Object.keys(debt).length > 0;
 
-// Objectif effectif = normal OU ×1.5 si dette active sur cette quête
-function getEffectiveTarget(objId){
+// Objectif effectif selon type de dette
+function getEffectiveTarget(objId, isWeekly=false){
 const base = getRankBase(objId, ri, prestige);
-if(debtActive && debtObjs.includes(objId)) return Math.ceil(base * 1.5);
+if(!debtActive) return base;
+// Pompes/abdos/squats/lecture : ×1.5
+if(["push","abs","squats","reading"].includes(objId) && debt[objId]) return Math.ceil(base * 1.5);
+// Eau : base + verres manquants hier
+if(objId === "water" && debt["water_extra"]) return base + debt["water_extra"];
+// Course / Marche (dette semaine suivante)
+if(isWeekly && debt["weekly_"+objId]) return Math.ceil(base * 1.5);
 return base;
 }
 
-const allDailyDone = reqDailyObjs.every(o=>(tLog[o.id]||0)>=getEffectiveTarget(o.id));
+// La dette méditation (sommeil) s'ajoute comme objectif du jour
+const sleepDebtMed = debt["sleep_med"] ? 30 : 0; // 30min de méditation obligatoires
+
+const allDailyDone = (()=>{
+const dailyOk = reqDailyObjs.every(o=>(tLog[o.id]||0)>=getEffectiveTarget(o.id));
+if(!dailyOk) return false;
+// Vérifier dette sommeil → méditation 30min obligatoire
+if(sleepDebtMed > 0 && (tLog["med"]||0) < sleepDebtMed) return false;
+return true;
+})();
 
 // 8. Streak : calculé depuis dailyLog mais ne descend jamais sous le streak sauvegardé si hier était complet
 const computedStreak = (()=>{
@@ -585,13 +622,14 @@ const pastDays=days.filter(d=>d<=today);
 if(pastDays.length===0)return false;
 const dailyOk=reqDailyObjs.every(o=>pastDays.every(d=>activeOn(d).indexOf(o)<0||(state.dailyLog[d]?.[o.id]||0)>=getEffectiveTarget(o.id)));
 if(!dailyOk)return false;
-const runBase=getRankBase("run",ri,prestige);
+const runBase=getEffectiveTarget("run", true);
 const runDone=wLog["run"]||0;
 if(runDone>=runBase)return true;
 if(restMode&&walkObj){
 const walkDone=wLog["walk"]||0;
+const walkBase=getEffectiveTarget("walk", true);
 const runCredit=walkDone*2;
-return (runDone+runCredit)>=runBase || walkDone>=walkObj.base;
+return (runDone+runCredit)>=runBase || walkDone>=walkBase;
 }
 return false;
 })();
@@ -824,9 +862,20 @@ if(d>0)return d+"j "+hh+"h"; if(hh>0)return hh+"h "+mm+"min"; return mm+"min";
 // ─── SOUS-COMPOSANTS ──────────────────────────────────────────────────
 
 function QI({obj}){
-const t=getEffectiveTarget(obj.id), d=(obj.weekly||obj.id==="walk")?(wLog[obj.id]||0):(tLog[obj.id]||0);
-const isDebt = debtActive && debtObjs.includes(obj.id);
-const done=obj.binary?(d>=1):(d>=t);
+const isWeekly = obj.weekly || obj.id==="walk";
+const t = getEffectiveTarget(obj.id, isWeekly);
+const d = isWeekly ? (wLog[obj.id]||0) : (tLog[obj.id]||0);
+
+// Détection dette par type
+const isDebtX15 = debtActive && ["push","abs","squats","reading"].includes(obj.id) && !!debt[obj.id];
+const isDebtWater = debtActive && obj.id==="water" && !!debt["water_extra"];
+const isDebtWeekly= debtActive && isWeekly && !!debt["weekly_"+obj.id];
+// Dette méditation (sommeil) — on modifie l'affichage de la quête méditation
+const isDebtMed = sleepDebtMed > 0 && obj.id==="med";
+const medTarget = isDebtMed ? Math.max(t, sleepDebtMed) : t;
+const effectiveT = isDebtMed ? medTarget : t;
+const isDebt = isDebtX15 || isDebtWater || isDebtWeekly || isDebtMed;
+const done=obj.binary?(d>=1):(d>=effectiveT);
 
 // Quêtes binaires : boutons Échec / Succès
 if(obj.binary){
@@ -875,10 +924,11 @@ style:"flex:"+succFlex+";padding:"+(validated&&!done?"6px 4px":"10px")+";border-
 );
 }
 
-const pct=(d/t)*100, over=d>t;
-return h("div",{class:"qi "+(d>=t&&t>0?"done":""),style:isDebt&&!done?"border-color:#ef444466;background:rgba(239,68,68,0.04)":""},
+const pct=(d/effectiveT)*100, over=d>effectiveT;
+const debtLabel = isDebtX15?"×1.5":isDebtWater?"+"+debt["water_extra"]+" verres":isDebtWeekly?"×1.5 hebdo":isDebtMed?"�� +30min obligatoire":"";
+return h("div",{class:"qi "+(d>=effectiveT&&effectiveT>0?"done":""),style:isDebt&&!done?"border-color:#ef444466;background:rgba(239,68,68,0.04)":""},
 h("div",{class:"qhdr",style:"display:flex;justify-content:space-between;align-items:center"},
-h("div",{class:"qname"},h("span",null,obj.icon)," ",obj.name,isDebt&&!done&&h("span",{style:"font-size:9px;color:#ef4444;font-family:Orbitron,sans-serif;border:1px solid #ef444455;border-radius:4px;padding:1px 5px;margin-left:6px"},"\u26A0 DETTE")),
+h("div",{class:"qname"},h("span",null,obj.icon)," ",obj.name,isDebt&&!done&&h("span",{style:"font-size:9px;color:#ef4444;font-family:Orbitron,sans-serif;border:1px solid #ef444455;border-radius:4px;padding:1px 5px;margin-left:6px"},"\u26A0 DETTE "+debtLabel)),
 h("div",{style:"font-size:9px;color:var(--td);font-family:Orbitron,sans-serif;letter-spacing:0.5px;text-align:right"},
 obj.binary
 ?(obj.binaryXp+" XP · "+(STAT_LBL[obj.stat]||obj.stat))
@@ -893,7 +943,7 @@ h("div",null,(obj.xpPer2||obj.xpPer)+" XP/"+obj.unit+" · "+(STAT_LBL[obj.stat2]
 h("div",{class:"qrow"},
 h(Fragment,null,
 h("div",{class:"qbar"},h("div",{class:"qfill"+(over?" over":done?" done":pct>0?" partial":""),style:"width:"+Math.min(100,pct)+"%"})),
-h("div",{class:"qxp",style:isDebt&&!done?"color:#ef4444":""},d+"/"+t+" "+((d>1||t>1)&&{rep:"reps",page:"pages",verre:"verres"}[obj.unit]||obj.unit))
+h("div",{class:"qxp",style:isDebt&&!done?"color:#ef4444":""},d+"/"+effectiveT+" "+((d>1||effectiveT>1)&&{rep:"reps",page:"pages",verre:"verres"}[obj.unit]||obj.unit))
 )
 ),
 (()=>{
@@ -1124,7 +1174,45 @@ launchNewSq();
 ),
 !activeSq&&!completedSq&&h("div",{style:"font-size:12px;color:var(--td);text-align:center;padding:8px 0"},"Chargement du d\u00e9fi...")
 ),
-h("div",{class:"card"},h("div",{class:"shdr"},h("div",{class:"ctitle",style:"margin:0"},"\u2694 Qu\u00eates journali\u00e8res")),req.map(o=>h(QI,{key:o.id,obj:o}))),
+h("div",{class:"card"},
+h("div",{class:"shdr"},h("div",{class:"ctitle",style:"margin:0"},"\u2694 Qu\u00eates journali\u00e8res")),
+req.map(o=>h(QI,{key:o.id,obj:o})),
+// Carte dette sommeil : méditation 30min obligatoire, sans XP
+sleepDebtMed>0&&(()=>{
+const medDone = tLog["med"]||0;
+const done = medDone >= sleepDebtMed;
+const pct = Math.min(100,(medDone/sleepDebtMed)*100);
+return h("div",{class:"qi"+(done?" done":""),style:done?"":"border-color:#ef444466;background:rgba(239,68,68,0.04)"},
+h("div",{class:"qhdr",style:"display:flex;justify-content:space-between;align-items:center"},
+h("div",{class:"qname"},
+h("span",null,"\uD83E\uDDD8\uD83C\uDFFB\u200D\u2642\uFE0F")," M\u00e9ditation",
+!done&&h("span",{style:"font-size:9px;color:#ef4444;font-family:Orbitron,sans-serif;border:1px solid #ef444455;border-radius:4px;padding:1px 5px;margin-left:6px"},"\u26A0 DETTE \uD83D\uDECF\uFE0F")
+),
+h("div",{style:"font-size:9px;color:var(--td);font-family:Orbitron,sans-serif;letter-spacing:0.5px"},"0 XP \u00b7 obligatoire")
+),
+h("div",{class:"qrow"},
+h("div",{class:"qbar"},h("div",{class:"qfill"+(done?" done":pct>0?" partial":""),style:"width:"+pct+"%"})),
+h("div",{class:"qxp",style:done?"":"color:#ef4444"},medDone+"/"+sleepDebtMed+" min")
+),
+h("div",{style:"display:flex;gap:8px;margin-top:8px"},
+h("button",{
+onClick:e=>{
+const cur=tLog["med"]||0;
+setState(s=>{const dl={...s.dailyLog};dl[today]={...(dl[today]||{}),med:cur+1};return{...s,dailyLog:dl,lastActiveDay:today};});
+},
+style:"flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);color:rgba(255,255,255,0.7);font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer;letter-spacing:1px"
+},"+1 min"),
+h("button",{
+onClick:e=>{
+const cur=tLog["med"]||0;
+setState(s=>{const dl={...s.dailyLog};dl[today]={...(dl[today]||{}),med:cur+10};return{...s,dailyLog:dl,lastActiveDay:today};});
+},
+style:"flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);color:rgba(255,255,255,0.7);font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer;letter-spacing:1px"
+},"+10 min")
+)
+);
+})()
+),
 wkq.length>0&&h("div",{class:"card"},h("div",{class:"ctitle"},"\uD83D\uDCC5 Qu\u00eates hebdomadaires"),wkq.map(o=>h(QI,{key:o.id,obj:o}))),
 bon.length>0&&h("div",{class:"card"},h("div",{class:"ctitle"},"\u2728 Qu\u00eates bonus"),bon.map(o=>h(QI,{key:o.id,obj:o})))
 );
