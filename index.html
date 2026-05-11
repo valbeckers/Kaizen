@@ -163,8 +163,8 @@ const STAT_LBL   = {Sante:"Sant\u00e9",Force:"Force",Intelligence:"Intelligence"
 
 const DEFS = [
   // ─── SANTÉ ────────────────────────────────────────────────────────────
-  {id:"sleep",  name:"8h de sommeil",   unit:"nuit",  xpPer:0,   daily:true, weekly:false,optional:false,stat:"Sante",         icon:"\uD83D\uDECF\uFE0F",         base:1,  binary:true, binaryXp:200},
   {id:"water",  name:"Hydratation",     unit:"verre", xpPer:10,  daily:true, weekly:false,optional:false,stat:"Sante",         icon:"\uD83D\uDCA7",               base:10},
+  {id:"sleep",  name:"8h de sommeil",   unit:"nuit",  xpPer:0,   daily:true, weekly:false,optional:false,stat:"Sante",         icon:"\uD83D\uDECF\uFE0F",         base:1,  binary:true, binaryXp:200},
   {id:"nosugar",name:"Pas de sucres transform\u00e9s", unit:"jour", xpPer:0, daily:true, weekly:false,optional:true, stat:"Sante", icon:"\uD83C\uDF4E",            base:1,  binary:true, binaryXp:200},
   {id:"protein",name:"Barre + fruit",   unit:"repas", xpPer:0,   daily:true, weekly:false,optional:true, stat:"Sante",         icon:"\uD83C\uDF4C",               base:1,  binary:true, binaryXp:200, startDate:"2026-04-20"},
   // ─── FORCE ────────────────────────────────────────────────────────────
@@ -352,7 +352,7 @@ function pickRandomSq(usedIds,restMode){
   return {...avail[Math.floor(Math.random()*avail.length)],stat};
 }
 
-const IMPORTED_VERSION = "2026-05-11-v3";
+const IMPORTED_VERSION = "2026-05-11-v4";
 const loadState  = () => {
   try{
     const ver=localStorage.getItem("sl_version");
