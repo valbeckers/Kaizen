@@ -1533,7 +1533,7 @@ function App(){
 
     // ── Suggestions intelligentes (quêtes bonus non faites depuis X jours) ──
     const suggestions=[];
-    objs.filter(o=>(o.optional||o.id==="walk")&&(o.daily||o.id==="walk")&&!o.binary).forEach(o=>{
+    objs.filter(o=>(o.optional||o.id==="walk")&&(o.daily||o.id==="walk")&&!o.binary&&!o.bonusHidden).forEach(o=>{
       let lastDone=null;
       for(let i=0;i<30;i++){
         const d=new Date();d.setDate(d.getDate()-i);
