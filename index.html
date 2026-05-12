@@ -150,11 +150,43 @@ const { useState, useEffect, useRef } = preactHooks;
 const RANKS = [
 {id:"E",label:"\u00c9veill\u00e9", color:"#9ca3af",glow:"#9ca3af11",bg:"#0f0f12",accent:"#6b7280",xpRequired:0},
 {id:"D",label:"Disciple", color:"#8b82c4",glow:"#8b82c422",bg:"#0f0e14",accent:"#7068b0",xpRequired:60000},
-{id:"C",label:"Catalyseur", color:"#9070d4",glow:"#9070d433",bg:"#100e18",accent:"#7858c0",xpRequired:240000},
-{id:"B",label:"B\u00e2tisseur", color:"#8a5fd8",glow:"#8a5fd855",bg:"#0e0c1c",accent:"#7248c4",xpRequired:600000},
-{id:"A",label:"Ascendant", color:"#9040e8",glow:"#9040e877",bg:"#0c0a1e",accent:"#7828d0",xpRequired:1330000},
-{id:"S",label:"Souverain", color:"#8b2fff",glow:"#8b2fff99",bg:"#0a0820",accent:"#6d10f0",xpRequired:2790000},
+{id:"C",label:"Catalyseur", color:"#9070d4",glow:"#9070d433",bg:"#100e18",accent:"#7858c0",xpRequired:180000},
+{id:"B",label:"B\u00e2tisseur", color:"#8a5fd8",glow:"#8a5fd855",bg:"#0e0c1c",accent:"#7248c4",xpRequired:420000},
+{id:"A",label:"Ascendant", color:"#9040e8",glow:"#9040e877",bg:"#0c0a1e",accent:"#7828d0",xpRequired:900000},
+{id:"S",label:"Souverain", color:"#8b2fff",glow:"#8b2fff99",bg:"#0a0820",accent:"#6d10f0",xpRequired:1860000},
 ];
+
+// Conditions de stats pour débloquer chaque palier (rang ou ascension)
+// rankId : id de RANKS pour D-S, ou "ASC_N" pour Ascension N (1-10)
+const RANK_STAT_REQUIREMENTS = {
+D: {count:3, level:10},
+C: {count:3, level:20},
+B: {count:4, level:25},
+A: {count:5, level:30},
+S: {count:5, level:37},
+ASC_1: {count:5, level:42},
+ASC_2: {count:5, level:45},
+ASC_3: {count:5, level:49},
+ASC_4: {count:5, level:52},
+ASC_5: {count:5, level:55},
+ASC_6: {count:6, level:56},
+ASC_7: {count:6, level:58},
+ASC_8: {count:6, level:60},
+ASC_9: {count:6, level:63},
+ASC_10: {count:6, level:65},
+};
+
+// Compte combien de stats atteignent un niveau seuil
+function countStatsAtLevel(stats, threshold){
+let n=0; Object.values(stats||{}).forEach(lvl=>{if((lvl||0)>=threshold)n++;}); return n;
+}
+
+// Vrai si la condition est remplie pour un palier donné
+function meetsStatRequirement(stats, reqKey){
+const req = RANK_STAT_REQUIREMENTS[reqKey];
+if(!req) return true; // Pas de condition = OK (sécurité)
+return countStatsAtLevel(stats, req.level) >= req.count;
+}
 
 const STATS = ["Sante","Force","Intelligence","Concentration","Endurance","Agilite","Discipline"];
 const STAT_COLOR = {Sante:"#ef4444",Force:"#4ade80",Intelligence:"#f59e0b",Concentration:"#a78bfa",Endurance:"#22d3ee",Agilite:"#fb923c",Discipline:"#c084fc"};
@@ -279,6 +311,25 @@ return avail[Math.floor(Math.random() * avail.length)];
 const getRank = xp => { for(let i=RANKS.length-1;i>=0;i--)if(xp>=RANKS[i].xpRequired)return RANKS[i]; return RANKS[0]; };
 const getNext = id => { const i=RANKS.findIndex(r=>r.id===id); return i<RANKS.length-1?RANKS[i+1]:null; };
 
+// Rang effectif en tenant compte des conditions de stats.
+// Si la condition pour passer au rang N n'est pas remplie, on reste au rang N-1
+// même si l'XP suffit.
+const getRankWithStats = (xp, stats) => {
+// On part du rang naturel (basé sur XP seul) puis on descend tant que la condition échoue
+let natural = getRank(xp);
+let idx = RANKS.findIndex(r=>r.id===natural.id);
+// On vérifie que toutes les conditions menant à ce rang sont OK
+while(idx > 0){
+const req = RANK_STAT_REQUIREMENTS[RANKS[idx].id];
+if(req && countStatsAtLevel(stats, req.level) < req.count){
+idx--; // condition non remplie : on redescend d'un cran
+} else {
+break;
+}
+}
+return RANKS[idx];
+};
+
 // Progression des objectifs par rang (linéaire E->S)
 const RANK_BASES = {
 push: [30, 44, 58, 72, 86, 100],
@@ -294,11 +345,18 @@ flow: [15, 18, 21, 24, 27, 30],
 grips: [10, 12, 14, 16, 18, 20],
 };
 
-// XP requis pour chaque Ascension (×2 à chaque fois, base = XP rang S)
+// XP cumulé requis pour atteindre l'Ascension N (1..10)
+// Pattern : base S→Asc1 = 1 152 000, puis ×1.2 à chaque saut
 function getAscensionXpRequired(prestigeLevel){
-// A1 = 141000, A2 = 282000, A3 = 564000...
-const BASE = 930000;
-return Math.round(BASE * Math.pow(2, prestigeLevel - 1));
+const S_XP = 1860000; // xpRequired du rang S
+const BASE_JUMP = 1152000; // XP du saut S → Ascension 1
+let cum = S_XP;
+let jump = BASE_JUMP;
+for(let i=1;i<=prestigeLevel;i++){
+cum += jump;
+jump = jump * 1.2;
+}
+return Math.round(cum);
 }
 
 function getRankBase(objId, rankIdx, prestige){
@@ -325,7 +383,8 @@ const wk=Math.ceil(((dt-yearStart)/86400000+1)/7);
 return dt.getUTCFullYear()+"-W"+String(wk).padStart(2,"0");
 };
 const sortStat = arr => [...arr].sort((a,b)=>STATS.indexOf(a.stat)-STATS.indexOf(b.stat));
-const xpForLvl = l => Math.round(646*Math.pow(1.07,l));
+// XP pour passer du niveau N au niveau N+1 : 1000 * 1.1^N
+const xpForLvl = l => Math.round(1000*Math.pow(1.1,l));
 const totForLvl = l => { let t=0; for(let i=0;i<l;i++)t+=xpForLvl(i); return t; };
 const getLvl = xp => { let l=0; while(xp>=totForLvl(l+1))l++; return l; };
 
@@ -443,7 +502,7 @@ function buildState(){
 const saved=loadState();
 if(!saved)return IMPORTED;
 const migratedLog=migrateGripsToMin(saved.dailyLog||IMPORTED.dailyLog);
-return {
+const out={
 ...IMPORTED,
 ...saved,
 objectives:DEFS,
@@ -461,6 +520,11 @@ prestige:saved.prestige||IMPORTED.prestige||0,
 restMode:saved.restMode||false,
 walkTarget:saved.walkTarget||0,
 };
+// Recalcul defensif: rebuild stats levels from statXp (cohérence après changement de formule)
+const recomputed={};
+Object.keys(out.statXp).forEach(k=>{ recomputed[k]=getLvl(out.statXp[k]||0); });
+out.stats=recomputed;
+return out;
 }
 
 // ─── COMPOSANT PRINCIPAL ───────────────────────────────────────────────────
@@ -487,6 +551,7 @@ const scrollRef = useRef(null);
 function switchTab(id){ setTab(id); if(scrollRef.current) scrollRef.current.scrollTop=0; }
 const [rankUp,setRankUp] = useState(null);
 const [prestigeUp,setPrestigeUp] = useState(null);
+const [showStatReqDetail,setShowStatReqDetail] = useState(false);
 const [floats,setFloats] = useState([]);
 const [showSet,setShowSet] = useState(false);
 const [confirmReset,setConfirmReset] = useState(false);
@@ -528,9 +593,17 @@ const wLog = state.weeklyLog[wk]||{};
 const prestige = state.prestige||0;
 
 const effectiveXp = state.totalXp;
-const rank = getRank(effectiveXp);
+const rank = getRankWithStats(effectiveXp, state.stats);
+const naturalRank = getRank(effectiveXp); // rang qu'on aurait sans les conditions de stats
 const nextRank = getNext(rank.id);
 const ri = RANKS.findIndex(r=>r.id===rank.id);
+
+// Condition de stats pour le prochain rang
+const nextRankReq = nextRank ? RANK_STAT_REQUIREMENTS[nextRank.id] : null;
+const nextRankStatsCount = nextRankReq ? countStatsAtLevel(state.stats, nextRankReq.level) : 0;
+const nextRankStatsOk = nextRankReq ? nextRankStatsCount >= nextRankReq.count : true;
+// Rang bloqué : on a l'XP mais pas les stats
+const rankBlocked = nextRank && effectiveXp >= nextRank.xpRequired && !nextRankStatsOk;
 
 // 5. Progression XP dans le rang
 const xpInRank = effectiveXp - rank.xpRequired;
@@ -541,7 +614,13 @@ const rankPct = nextRank ? Math.min(100,(xpInRank/xpToNext)*100) : 100;
 const S_RANK = RANKS[RANKS.length-1];
 const ASCENSION_XP_NEEDED = prestige > 0 ? getAscensionXpRequired(prestige + 1) : getAscensionXpRequired(1);
 const ASCENSION_XP_START = prestige > 0 ? getAscensionXpRequired(prestige) : S_RANK.xpRequired;
-const prestigeAvailable = prestige < MAX_PRESTIGE && !nextRank && effectiveXp >= ASCENSION_XP_NEEDED;
+const nextAscension = prestige + 1;
+const ascReq = RANK_STAT_REQUIREMENTS["ASC_"+nextAscension];
+const ascStatsCount = ascReq ? countStatsAtLevel(state.stats, ascReq.level) : 0;
+const ascStatsOk = ascReq ? ascStatsCount >= ascReq.count : true;
+const prestigeXpReached = prestige < MAX_PRESTIGE && !nextRank && effectiveXp >= ASCENSION_XP_NEEDED;
+const prestigeAvailable = prestigeXpReached && ascStatsOk;
+const prestigeBlocked = prestigeXpReached && !ascStatsOk;
 
 // 6. XP du jour (journalières uniquement, pas l'hebdo)
 const todayXp = Object.entries(tLog).reduce((s,[id,a])=>{
@@ -741,9 +820,10 @@ let next={...s};
 if(s.lastStreakDay!==t)next={...next,lastStreakDay:t};
 if(s.streakBonusDay!==t){
 const sx={...next.statXp,Discipline:(next.statXp.Discipline||0)+250};
-const rkBefore=getRank(next.totalXp);
+const rkBefore=getRankWithStats(next.totalXp, next.stats);
 next={...next,totalXp:next.totalXp+250,statXp:sx,stats:{...next.stats,Discipline:getLvl(sx.Discipline)},streakBonusDay:t};
-if(getRank(next.totalXp).id!==rkBefore.id)setTimeout(()=>setRankUp(getRank(next.totalXp)),300);
+const rkAfter=getRankWithStats(next.totalXp, next.stats);
+if(rkAfter.id!==rkBefore.id)setTimeout(()=>setRankUp(rkAfter),300);
 // Milestone tous les 7 jours de streak
 const newStreak=next.streak;
 const milestones=next.streakMilestones||[];
@@ -828,9 +908,11 @@ function addXp(amount,stat,e,silent,showStat){
 setState(s=>{
 const nt=s.totalXp+amount;
 const sx={...s.statXp,[stat]:(s.statXp[stat]||0)+amount};
-const rk=getRank(s.totalXp), nrk=getNext(rk.id);
-if(nrk&&getRank(nt).id!==rk.id)setTimeout(()=>setRankUp(getRank(nt)),100);
-return {...s,totalXp:nt,statXp:sx,stats:{...s.stats,[stat]:getLvl(sx[stat])},lastActiveDay:todayStr()};
+const newStats={...s.stats,[stat]:getLvl(sx[stat])};
+const rkBefore=getRankWithStats(s.totalXp, s.stats);
+const rkAfter=getRankWithStats(nt, newStats);
+if(rkAfter.id!==rkBefore.id)setTimeout(()=>setRankUp(rkAfter),100);
+return {...s,totalXp:nt,statXp:sx,stats:newStats,lastActiveDay:todayStr()};
 });
 if(e&&!silent){
 const lbl=showStat?("+"+Math.round(amount)+" XP "+( STAT_LBL2[showStat]||showStat)):("+"+Math.round(amount)+" XP");
@@ -1314,11 +1396,55 @@ h("div",{class:"xpbar",style:"height:8px"},h("div",{class:"xpfill",style:"width:
 h("div",{style:"display:flex;justify-content:space-between;font-size:10px;color:var(--td);margin-top:5px;font-family:Orbitron,sans-serif"},
 h("span",null,state.totalXp.toFixed(0)+" XP"),
 nextRank
-? h("span",{style:"color:var(--rc)"},(nextRank.xpRequired-state.totalXp).toFixed(0)+" XP manquants")
+? (rankBlocked
+? h("span",{style:"color:#fb923c"},"Stats requises non atteintes")
+: h("span",{style:"color:var(--rc)"},(nextRank.xpRequired-state.totalXp).toFixed(0)+" XP manquants"))
 : prestigeAvailable
 ? h("span",{style:"color:#a855f7"},"Ascension disponible !")
+: prestigeBlocked
+? h("span",{style:"color:#fb923c"},"Stats requises non atteintes")
 : h("span",{style:"color:var(--rc)"},(ASCENSION_XP_NEEDED-effectiveXp).toFixed(0)+" XP avant Ascension "+(ROMAN[prestige]||"I"))
 ),
+// Condition de stats pour le prochain palier (rang ou ascension)
+(()=>{
+let label, count, threshold, target, ok;
+if(nextRank && nextRankReq){
+target = nextRank.id;
+count = nextRankReq.count;
+threshold = nextRankReq.level;
+ok = nextRankStatsOk;
+label = "Rang "+target;
+} else if(!nextRank && ascReq && prestige<MAX_PRESTIGE){
+target = "Ascension "+nextAscension;
+count = ascReq.count;
+threshold = ascReq.level;
+ok = ascStatsOk;
+label = target;
+} else {
+return null;
+}
+const reached = countStatsAtLevel(state.stats, threshold);
+const summaryColor = ok ? "#4ade80" : (rankBlocked || prestigeBlocked) ? "#fb923c" : "var(--td)";
+return h("div",{
+onClick:()=>setShowStatReqDetail(v=>!v),
+style:"margin-top:10px;padding:8px 10px;background:rgba(255,255,255,0.02);border:1px solid "+(ok?"#4ade8033":(rankBlocked||prestigeBlocked)?"#fb923c44":"rgba(255,255,255,0.06)")+";border-radius:8px;cursor:pointer;user-select:none"
+},
+h("div",{style:"display:flex;justify-content:space-between;align-items:center;font-size:10px;font-family:Orbitron,sans-serif;letter-spacing:1px"},
+h("span",{style:"color:var(--td);text-transform:uppercase"},"Condition "+label),
+h("span",{style:"color:"+summaryColor},(ok?"\u2713 ":"")+reached+"/"+count+" stats niv. "+threshold+" "+(showStatReqDetail?"\u25B2":"\u25BC"))
+),
+showStatReqDetail && h("div",{style:"margin-top:8px;display:grid;grid-template-columns:repeat(2,1fr);gap:4px"},
+STATS.map(s=>{
+const lvl = state.stats[s]||0;
+const reached = lvl>=threshold;
+return h("div",{key:s,style:"display:flex;justify-content:space-between;align-items:center;font-size:10px;padding:3px 6px;background:rgba(255,255,255,0.02);border-radius:4px;border:1px solid "+(reached?"#4ade8033":"rgba(255,255,255,0.04)")},
+h("span",{style:"color:"+(STAT_COLOR[s]||"#fff")},STAT_LBL[s]||s),
+h("span",{style:"font-family:Orbitron,sans-serif;color:"+(reached?"#4ade80":"var(--td)")},(reached?"\u2713 ":"")+"niv. "+lvl)
+);
+})
+)
+);
+})(),
 prestigeAvailable&&h("button",{
 onClick:()=>{
 const newPrestige=(state.prestige||0)+1;
@@ -1454,12 +1580,28 @@ return h("div",{class:"tab"},
 h("div",{class:"card"},
 h("div",{class:"ctitle"},"Chemin vers le rang S"),
 h("div",{class:"rpath"},RANKS.map((r,i)=>{
-const reached=effectiveXp>=r.xpRequired, cur=r.id===rank.id;
+const xpReached=effectiveXp>=r.xpRequired;
+// Rang réellement débloqué : XP + condition de stats
+const req = RANK_STAT_REQUIREMENTS[r.id];
+const statsOk = !req || countStatsAtLevel(state.stats, req.level) >= req.count;
+const reached = xpReached && statsOk;
+const blocked = xpReached && !statsOk;
+const cur = r.id===rank.id;
+// Couleur du cercle : vert si atteint, orange si bloqué (XP OK mais stats KO), gris sinon
+const borderColor = reached ? r.color : blocked ? "#fb923c" : "#333";
+const textColor = reached ? r.color : blocked ? "#fb923c" : "#444";
 return h(Fragment,{key:r.id},
 h("div",{class:"rnode"},
-h("div",{class:"rcirc",style:"border-color:"+(reached?r.color:"#333")+";color:"+(reached?r.color:"#444")+";background:"+(cur?r.color+"22":"transparent")+";box-shadow:"+(cur?"0 0 15px "+r.glow:"none")},r.id),
+h("div",{class:"rcirc",style:"border-color:"+borderColor+";color:"+textColor+";background:"+(cur?r.color+"22":"transparent")+";box-shadow:"+(cur?"0 0 15px "+r.glow:"none")},r.id),
+
 ),
-i<RANKS.length-1&&h("div",{class:"rconn",style:"background:"+(effectiveXp>=RANKS[i+1].xpRequired?r.color:"#222")})
+i<RANKS.length-1&&(()=>{
+const nextR = RANKS[i+1];
+const nextReq = RANK_STAT_REQUIREMENTS[nextR.id];
+const nextStatsOk = !nextReq || countStatsAtLevel(state.stats, nextReq.level) >= nextReq.count;
+const connReached = effectiveXp>=nextR.xpRequired && nextStatsOk;
+return h("div",{class:"rconn",style:"background:"+(connReached?r.color:"#222")});
+})()
 );
 })),
 nextRank&&h("div",{style:"margin-top:8px"},
@@ -1473,8 +1615,8 @@ h("div",{class:"xpbar"},h("div",{class:"xpfill",style:"width:"+rankPct+"%"}))
 h("div",{class:"card"},
 h("div",{class:"ctitle"},"Caract\u00e9ristiques"),
 STATS.map(s=>{
-const lvl=state.stats[s]||0, sx=state.statXp[s]||0;
-const xpIn=sx-totForLvl(lvl), xpNeed=xpForLvl(lvl), pct=Math.min(100,(xpIn/xpNeed)*100);
+const sx=state.statXp[s]||0, lvl=getLvl(sx);
+const xpIn=sx-totForLvl(lvl), xpNeed=xpForLvl(lvl), pct=Math.max(0,Math.min(100,(xpIn/xpNeed)*100));
 return h("div",{key:s,class:"schr"},
 h("div",{class:"schn"},h("span",null,STAT_LBL[s]||s),h("span",{class:"schlvl"},"Niv. "+lvl)),
 h("div",{class:"schb"},h("div",{class:"schf",style:"width:"+pct+"%;background:linear-gradient(90deg,"+(STAT_COLOR[s]||"#fff")+"88,"+(STAT_COLOR[s]||"#fff")+")"})),
