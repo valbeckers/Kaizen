@@ -223,55 +223,54 @@ const DEFS = [
 // Quetes speciales — par stat
 const SP = {
 Sante:[
-{id:"sp_sun", name:"10min de lumi\u00e8re naturelle", icon:"\u2600\uFE0F", unit:"min", target:10, xp:200, days:1, desc:"10 min de lumi\u00e8re naturelle"},
-{id:"sp_fruits", name:"Manger 5 fruits & l\u00e9gumes", icon:"\uD83C\uDF4F", unit:"f/l", target:5, xp:200, days:1, desc:"Manger 5 fruits et l\u00e9gumes"},
-{id:"sp_breath", name:"10min de coh\u00e9rence cardiaque",icon:"\uD83D\uDC93", unit:"jour", target:1, xp:200, days:1, desc:"10 min de respiration contr\u00f4l\u00e9e", binary:true},
+{id:"sp_sun", tier:"mineure", name:"10min de lumi\u00e8re naturelle", icon:"\u2600\uFE0F", unit:"min", target:10, xp:100, days:1, desc:"10 min de lumi\u00e8re naturelle"},
+{id:"sp_fruits", tier:"mineure", name:"Manger 5 fruits & l\u00e9gumes", icon:"\uD83C\uDF4F", unit:"f/l", target:5, xp:100, days:1, desc:"Manger 5 fruits et l\u00e9gumes"},
+{id:"sp_breath", tier:"mineure", name:"10min de coh\u00e9rence cardiaque",icon:"\uD83D\uDC93", unit:"jour", target:1, xp:100, days:1, desc:"10 min de respiration contr\u00f4l\u00e9e", binary:true},
 ],
 Force:[
-{id:"sp_dips", name:"100 dips", icon:"\uD83D\uDC4A\uD83C\uDFFB", unit:"rep", target:100, xp:200, days:1, desc:"100 dips en 24h"},
-{id:"sp_pull", name:"30 tractions", icon:"\u270A\uD83C\uDFFB", unit:"rep", target:30, xp:300, days:1, desc:"30 tractions en 24h"},
-{id:"sp_lunge", name:"100 fentes", icon:"\uD83E\uDDBF", unit:"rep", target:100, xp:300, days:1, desc:"100 fentes march\u00e9es"},
-{id:"sp_plank", name:"10min de gainage", icon:"\uD83E\uDDCE\uD83C\uDFFB\u200D\u2642\uFE0F", unit:"min", target:10, xp:200, days:1, desc:"10 min cumul\u00e9es en 24h"},
-{id:"sp_deadhang",name:"10min de dead hang", icon:"\u270A\uD83C\uDFFB", unit:"min", target:10, xp:200, days:1, desc:"10 min cumul\u00e9es en 24h"},
-{id:"sp_wallsit", name:"10min de chaise", icon:"\uD83E\uDE91", unit:"min", target:10, xp:300, days:1, desc:"10 min cumul\u00e9es en 24h"},
+{id:"sp_dips", tier:"majeure", name:"100 dips", icon:"\uD83D\uDC4A\uD83C\uDFFB", unit:"rep", target:100, xp:250, days:1, desc:"100 dips en 24h"},
+{id:"sp_pull", tier:"legendaire", name:"30 tractions", icon:"\u270A\uD83C\uDFFB", unit:"rep", target:30, xp:500, days:1, desc:"30 tractions en 24h"},
+{id:"sp_lunge", tier:"legendaire", name:"100 fentes", icon:"\uD83E\uDDBF", unit:"rep", target:100, xp:300, xp2:200, stat2:"Endurance", days:1, desc:"100 fentes march\u00e9es"},
+{id:"sp_plank", tier:"legendaire", name:"10min de gainage", icon:"\uD83E\uDDCE\uD83C\uDFFB\u200D\u2642\uFE0F", unit:"min", target:10, xp:400, xp2:100, stat2:"Endurance", days:1, desc:"10 min cumul\u00e9es en 24h"},
+{id:"sp_deadhang",tier:"legendaire", name:"10min de dead hang", icon:"\u270A\uD83C\uDFFB", unit:"min", target:10, xp:400, xp2:100, stat2:"Endurance", days:1, desc:"10 min cumul\u00e9es en 24h"},
+{id:"sp_wallsit", tier:"legendaire", name:"10min de chaise", icon:"\uD83E\uDE91", unit:"min", target:10, xp:500, xp2:250, stat2:"Endurance", days:1, desc:"10 min cumul\u00e9es en 24h"},
 ],
 Intelligence:[
-{id:"sp_pod", name:"\u00c9couter 1 podcast", icon:"\uD83C\uDF99\uFE0F", unit:"\u00e9p.", target:1, xp:100, days:1, desc:"1 podcast complet en 24h", binary:true},
-{id:"sp_learning", name:"1h d'apprentissage actif", icon:"\uD83C\uDF93", unit:"jour", target:1, xp:400, xp2:100, stat2:"Concentration", days:1, desc:"1h d'apprentissage actif sans distraction", binary:true},
+{id:"sp_pod", tier:"mineure", name:"\u00c9couter 1 podcast", icon:"\uD83C\uDF99\uFE0F", unit:"\u00e9p.", target:1, xp:100, days:1, desc:"1 podcast complet en 24h", binary:true},
+{id:"sp_learning", tier:"legendaire", name:"1h d'apprentissage actif", icon:"\uD83C\uDF93", unit:"jour", target:1, xp:500, xp2:250, stat2:"Concentration", xp3:250, stat3:"Discipline", days:1, desc:"1h d'apprentissage actif sans distraction", binary:true},
 ],
 Concentration:[
-{id:"sp_silence30", name:"30min de silence", icon:"\uD83E\uDD2B", unit:"jour", target:1, xp:350, days:1, desc:"30 min sans parler ni consommer", binary:true},
-{id:"sp_deepwork", name:"Deep Work 90min", icon:"\u26AB", unit:"jour", target:1, xp:500, days:1, desc:"90min sans distraction", binary:true},
-{id:"sp_memo30", name:"30min de m\u00e9morisation", icon:"\uD83E\uDDE0", unit:"min", target:30, xp:300, days:1, desc:"30 min de m\u00e9morisation active"},
+{id:"sp_silence30", tier:"majeure", name:"30min de silence", icon:"\uD83E\uDD2B", unit:"jour", target:1, xp:250, days:1, desc:"30 min sans parler ni consommer", binary:true},
+{id:"sp_deepwork", tier:"legendaire", name:"Deep Work 90min", icon:"\u26AB", unit:"jour", target:1, xp:500, xp2:250, stat2:"Discipline", days:1, desc:"90min sans distraction", binary:true},
+{id:"sp_memo30", tier:"legendaire", name:"30min de m\u00e9morisation", icon:"\uD83E\uDDE0", unit:"min", target:30, xp:500, xp2:250, stat2:"Discipline", days:1, desc:"30 min de m\u00e9morisation active"},
 ],
 Endurance:[
-{id:"sp_jump", name:"20min de corde \u00e0 sauter",icon:"\uD83D\uDCA6", unit:"min", target:20, xp:400, xp2:100, stat2:"Agilite", days:1, desc:"20 min non-stop", noRestMode:true},
-{id:"sp_sprint", name:"10 s\u00e9ries fractionn\u00e9 100m",icon:"\u26A1", unit:"s\u00e9r.",target:10,xp:300,days:1, desc:"10 x 100m sprint/r\u00e9cup", noRestMode:true},
-{id:"sp_10km", name:"10km de running", icon:"\uD83C\uDFC3\uD83C\uDFFB",unit:"km", target:10, xp:800, xp2:200, stat2:"Agilite", days:1, desc:"10km non-stop", binary:true, noRestMode:true},
-{id:"sp_stairs", name:"30 mont\u00e9es d'escaliers",icon:"\uD83E\uDE9C", unit:"A/R", target:30, xp:300, xp2:100, stat2:"Agilite", days:1, desc:"30 mont\u00e9es/descentes"},
-{id:"sp_walk30", name:"30min de marche", icon:"\uD83D\uDEB6\uD83C\uDFFB\u200D\u2642\uFE0F",unit:"jour",target:1,xp:300,days:1,desc:"30 min de marche d'une traite",binary:true},
-{id:"sp_burpees", name:"100 burpees", icon:"\uD83D\uDD25", unit:"rep", target:100,xp:400, xp2:100, stat2:"Agilite", days:1, desc:"100 burpees en 24h", noRestMode:true},
+{id:"sp_jump", tier:"legendaire", name:"20min de corde \u00e0 sauter",icon:"\uD83D\uDCA6", unit:"min", target:20, xp:400, xp2:100, stat2:"Agilite", days:1, desc:"20 min non-stop", noRestMode:true},
+{id:"sp_sprint", tier:"majeure", name:"10 s\u00e9ries fractionn\u00e9 100m",icon:"\u26A1", unit:"s\u00e9r.",target:10, xp:250, days:1, desc:"10 x 100m sprint/r\u00e9cup", noRestMode:true},
+{id:"sp_10km", tier:"legendaire", name:"10km de running", icon:"\uD83C\uDFC3\uD83C\uDFFB",unit:"km", target:10, xp:800, xp2:200, stat2:"Agilite", days:1, desc:"10km non-stop", binary:true, noRestMode:true},
+{id:"sp_stairs", tier:"majeure", name:"30 mont\u00e9es d'escaliers",icon:"\uD83E\uDE9C", unit:"A/R", target:30, xp:200, xp2:50, stat2:"Agilite", days:1, desc:"30 mont\u00e9es/descentes"},
+{id:"sp_walk30", tier:"majeure", name:"30min de marche", icon:"\uD83D\uDEB6\uD83C\uDFFB\u200D\u2642\uFE0F",unit:"jour",target:1,xp:250,days:1,desc:"30 min de marche d'une traite",binary:true},
+{id:"sp_burpees", tier:"legendaire", name:"100 burpees", icon:"\uD83D\uDD25", unit:"rep", target:100,xp:500, xp2:250, stat2:"Agilite", days:1, desc:"100 burpees en 24h", noRestMode:true},
 ],
 Agilite:[
-{id:"sp_jump_ag", name:"20min de corde \u00e0 sauter",icon:"\uD83D\uDCA6", unit:"min", target:20, xp:100, xp2:400, stat2:"Endurance", days:1, desc:"20 min non-stop", noRestMode:true},
-{id:"sp_10km_ag", name:"10km de running", icon:"\uD83C\uDFC3\uD83C\uDFFB",unit:"km", target:10, xp:200, xp2:800, stat2:"Endurance", days:1, desc:"10km non-stop", binary:true, noRestMode:true},
-{id:"sp_stairs_ag",name:"30 mont\u00e9es d'escaliers",icon:"\uD83E\uDE9C", unit:"A/R", target:30, xp:100, xp2:300, stat2:"Endurance", days:1, desc:"30 mont\u00e9es/descentes"},
-{id:"sp_burp_ag", name:"100 burpees", icon:"\uD83D\uDD25", unit:"rep", target:100,xp:100, xp2:400, stat2:"Endurance", days:1, desc:"100 burpees en 24h", noRestMode:true},
-{id:"sp_flex30", name:"30min de souplesse", icon:"\uD83E\uDD38\uD83C\uDFFB",unit:"min", target:30, xp:300, days:1, desc:"30 min de souplesse"},
-{id:"sp_flow20", name:"20min d'animal flow", icon:"\uD83D\uDC0A", unit:"min", target:20, xp:200, days:1, desc:"20 min d'animal flow"},
+{id:"sp_flex30", tier:"legendaire", name:"30min de souplesse", icon:"\uD83E\uDD38\uD83C\uDFFB",unit:"min", target:30, xp:500, days:1, desc:"30 min de souplesse"},
+{id:"sp_flow20", tier:"majeure", name:"20min d'animal flow", icon:"\uD83D\uDC0A", unit:"min", target:20, xp:250, days:1, desc:"20 min d'animal flow"},
 ],
 Discipline:[
-{id:"sp_noscreen", name:"Aucun \u00e9cran apr\u00e8s 20h", icon:"\uD83D\uDCF5", unit:"jour", target:1, xp:200, days:1, desc:"Pas d'\u00e9cran apr\u00e8s 20h", binary:true},
-{id:"sp_fasting", name:"Je\u00fbne 24h", icon:"\u23F3", unit:"jour", target:1, xp:500, days:1, desc:"Je\u00fbne 24h complet", binary:true},
-{id:"sp_nojunk", name:"Pas de junk-food", icon:"\uD83C\uDF55", unit:"jour", target:1, xp:200, days:1, desc:"Z\u00e9ro junk-food en 24h", binary:true},
-{id:"sp_cold", name:"10min douche froide", icon:"\uD83D\uDEBF", unit:"jour", target:1, xp:300, days:1, desc:"10 min d'eau froide", binary:true},
-{id:"sp_nopassif", name:"Aucun contenu passif", icon:"\uD83E\uDDE0", unit:"jour", target:1, xp:300, days:1, desc:"Z\u00e9ro scroll/r\u00e9seaux en 24h", binary:true},
-{id:"sp_sil_vol", name:"30min de silence", icon:"\uD83E\uDD2B", unit:"jour", target:1, xp:150, days:1, desc:"30 min sans parler ni consommer", binary:true},
-{id:"sp_task", name:"Accomplir une t\u00e2che repouss\u00e9e", icon:"\uD83D\uDD57", unit:"jour", target:1, xp:300, days:1, desc:"Accomplir aujourd'hui une t\u00e2che repouss\u00e9e", binary:true},
-{id:"sp_declutter", name:"D\u00e9sencombrement", icon:"\uD83D\uDCE6", unit:"objet", target:10, xp:200, days:1, desc:"Jeter/ranger 10 objets"},
-{id:"sp_nophone3h", name:"T\u00e9l\u00e9phone hors de port\u00e9e 3h", icon:"\uD83D\uDCF5", unit:"jour", target:1, xp:300, days:1, desc:"T\u00e9l\u00e9phone hors de port\u00e9e pendant 3h", binary:true},
+{id:"sp_noscreen", tier:"majeure", name:"Aucun \u00e9cran apr\u00e8s 20h", icon:"\uD83D\uDCF5", unit:"jour", target:1, xp:250, days:1, desc:"Pas d'\u00e9cran apr\u00e8s 20h", binary:true},
+{id:"sp_fasting", tier:"legendaire", name:"Je\u00fbne 24h", icon:"\u23F3", unit:"jour", target:1, xp:500, days:1, desc:"Je\u00fbne 24h complet", binary:true},
+{id:"sp_nojunk", tier:"mineure", name:"Pas de junk-food", icon:"\uD83C\uDF55", unit:"jour", target:1, xp:100, days:1, desc:"Z\u00e9ro junk-food en 24h", binary:true},
+{id:"sp_cold", tier:"majeure", name:"10min douche froide", icon:"\uD83D\uDEBF", unit:"jour", target:1, xp:250, days:1, desc:"10 min d'eau froide", binary:true},
+{id:"sp_nopassif", tier:"majeure", name:"Aucun contenu passif", icon:"\uD83E\uDDE0", unit:"jour", target:1, xp:250, days:1, desc:"Z\u00e9ro scroll/r\u00e9seaux en 24h", binary:true},
+{id:"sp_task", tier:"majeure", name:"Accomplir une t\u00e2che repouss\u00e9e", icon:"\uD83D\uDD57", unit:"jour", target:1, xp:250, days:1, desc:"Accomplir aujourd'hui une t\u00e2che repouss\u00e9e", binary:true},
+{id:"sp_declutter", tier:"majeure", name:"D\u00e9sencombrement", icon:"\uD83D\uDCE6", unit:"objet", target:10, xp:250, days:1, desc:"Jeter/ranger 10 objets"},
+{id:"sp_nophone3h", tier:"legendaire", name:"T\u00e9l\u00e9phone hors de port\u00e9e 3h", icon:"\uD83D\uDCF5", unit:"jour", target:1, xp:500, days:1, desc:"T\u00e9l\u00e9phone hors de port\u00e9e pendant 3h", binary:true},
 ],
 };
+
+// Couleurs et libellés des tiers (partagés avec les Épreuves)
+const SQ_TIER_COLOR = {mineure:"#fbbf24", majeure:"#f59e0b", legendaire:"#f97316"};
+const SQ_TIER_LABEL = {mineure:"Mineure", majeure:"Majeure", legendaire:"L\u00e9gendaire"};
 
 // ─── ÉPREUVES (challenges 7 jours) ────────────────────────────────────────
 const EPREUVE_COOLDOWN = {mineure:2*86400000, majeure:5*86400000, legendaire:7*86400000};
@@ -1307,19 +1306,29 @@ const urgent=remaining<86400000&&!sq.completedAt;
 const pct=Math.min(100,(sq.progress/sq.target)*100);
 const done=sq.progress>=sq.target;
 
+// Helper : liste les paires (xp, stat) actives sur cette quête (1, 2 ou 3)
+const xpPairs = [
+{xp:sq.xp, stat:sq.stat},
+sq.xp2&&sq.stat2 ? {xp:sq.xp2, stat:sq.stat2} : null,
+sq.xp3&&sq.stat3 ? {xp:sq.xp3, stat:sq.stat3} : null,
+].filter(Boolean);
+
 function completeBinary(val,e){
 if(sq.progress>=sq.target)return;
 const nowComplete=val>=1;
 if(nowComplete){
 const id1=Date.now()+Math.random(), id2=id1+0.1;
-setFloats(f=>[...f,{id:id1,y:"35%",txt:"\uD83C\uDFC6 QU\u00c9TE VALID\u00c9E !"},{id:id2,y:"40%",txt:"+"+sq.xp+" XP "+(STAT_LBL2[sq.stat]||sq.stat)+(sq.xp2&&sq.stat2?"\n+"+sq.xp2+" XP "+(STAT_LBL2[sq.stat2]||sq.stat2):"")}]);
+const xpText = xpPairs.map(p=>"+"+p.xp+" XP "+(STAT_LBL2[p.stat]||p.stat)).join("\n");
+setFloats(f=>[...f,{id:id1,y:"35%",txt:"\uD83C\uDFC6 QU\u00c9TE VALID\u00c9E !"},{id:id2,y:"40%",txt:xpText}]);
 setTimeout(()=>setFloats(f=>f.filter(p=>p.id!==id1&&p.id!==id2)),1400);
-addXp(sq.xp,sq.stat,null,true);
-if(sq.xp2&&sq.stat2)addXp(sq.xp2,sq.stat2,null,true);
+xpPairs.forEach(p=>addXp(p.xp,p.stat,null,true));
 }
 setState(s=>({...s,specialQuests:s.specialQuests.map(q=>q.sqid===sq.sqid
 ?{...q,progress:val,completedAt:nowComplete?Date.now():q.completedAt}:q)}));
 }
+
+const tier = sq.tier || "majeure";
+const tierColor = SQ_TIER_COLOR[tier] || "#f59e0b";
 
 return h("div",{class:"sqcard"+(urgent?" sq-urgent":"")},
 h("div",{style:"display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"},
@@ -1330,12 +1339,7 @@ h("div",{style:"font-size:13px;font-weight:700;color:var(--tx)"},sq.name)
 )
 ),
 showInput&&h("div",{style:"text-align:right"},
-sq.xp2&&sq.stat2
-? h(Fragment,null,
-h("div",{style:"font-size:9px;color:var(--td);font-family:Orbitron,sans-serif"},sq.xp+" XP \u00b7 "+(STAT_LBL[sq.stat]||sq.stat)),
-h("div",{style:"font-size:9px;color:var(--td);font-family:Orbitron,sans-serif"},sq.xp2+" XP \u00b7 "+(STAT_LBL[sq.stat2]||sq.stat2))
-)
-: h("div",{style:"font-size:9px;color:var(--td);font-family:Orbitron,sans-serif"},sq.xp+" XP \u00b7 "+(STAT_LBL[sq.stat]||sq.stat))
+xpPairs.map((p,i)=>h("div",{key:i,style:"font-size:9px;color:var(--td);font-family:Orbitron,sans-serif"},p.xp+" XP \u00b7 "+(STAT_LBL[p.stat]||p.stat)))
 )
 ),
 h("div",{class:"sqbar"},h("div",{class:"sqbarfill",style:"width:"+pct+"%"})),
@@ -1475,7 +1479,7 @@ activeEp
 : h("div",{style:"font-size:12px;color:#f59e0b;text-align:center;padding:4px 0"},"\uD83D\uDD0D Nouvelle \u00e9preuve en cours de d\u00e9tection...")
 ),
 activeSq&&h("div",{class:"card",style:"border-color:#ef444444"},
-h("div",{class:"ctitle",style:"color:#ef4444;margin-bottom:8px"},"\uD83D\uDEA8 Qu\u00eate urgente"),
+h("div",{class:"ctitle",style:"color:#ef4444;margin-bottom:8px"},"\uD83D\uDEA8 Qu\u00eate urgente"+(activeSq.tier?" \u00b7 "+(SQ_TIER_LABEL[activeSq.tier]||""):"")),
 h(SqCard,{sq:activeSq,showInput:false})
 ),
 secs.map(({lb,ob,iw,mixed})=>ob.length===0?null:
@@ -1507,7 +1511,7 @@ activeEp
 h("div",{class:"card",style:"border-color:#ef444444"},
 h("div",{class:"shdr"},
 h("div",null,
-h("div",{class:"ctitle",style:"margin:0;color:#ef4444"},"\uD83D\uDEA8 Qu\u00eate urgente"),
+h("div",{class:"ctitle",style:"margin:0;color:#ef4444"},"\uD83D\uDEA8 Qu\u00eate urgente"+(activeSq&&activeSq.tier?" \u00b7 "+(SQ_TIER_LABEL[activeSq.tier]||""):"")),
 )
 ),
 activeSq&&h(SqCard,{sq:activeSq,showInput:true}),
