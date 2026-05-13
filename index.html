@@ -216,7 +216,7 @@ const DEFS = [
   {id:"run",    name:"Course",          unit:"km",    xpPer:100, daily:false,weekly:true, optional:false,stat:"Endurance",      icon:"\uD83C\uDFC3\uD83C\uDFFB",   base:7,  stat2:"Agilite", xpPer2:20},
   {id:"walk",   name:"Marche",          unit:"km",    xpPer:50,  daily:false,weekly:false,optional:true, stat:"Endurance",      icon:"\uD83D\uDEB6\uD83C\uDFFB\u200D\u2642\uFE0F", base:5, fixedBase:true, bonusHidden:true},
   // ─── AGILITÉ ──────────────────────────────────────────────────────────
-  {id:"flex",   name:"Souplesse",       unit:"min",   xpPer:15,  daily:true, weekly:false,optional:true, stat:"Agilite",        icon:"\uD83E\uDD38\uD83C\uDFFB",   base:15, fixedBase:true, bonusHidden:true},
+  {id:"flex",   name:"Souplesse",       unit:"min",   xpPer:15,  daily:true, weekly:false,optional:true, stat:"Agilite",        icon:"\uD83E\uDD38\uD83C\uDFFB",   base:15, fixedBase:true},
   {id:"balance",name:"\u00c9quilibre sur un pied",unit:"min",xpPer:15,daily:true,weekly:false,optional:true,stat:"Agilite",     icon:"\uD83E\uDDB6\uD83C\uDFFB",   base:10, fixedBase:true},
   {id:"flow",   name:"Animal flow",     unit:"min",   xpPer:15,  daily:true, weekly:false,optional:true, stat:"Agilite",        icon:"\uD83D\uDC0A",               base:10, fixedBase:true, bonusHidden:true},
   // ─── DISCIPLINE ───────────────────────────────────────────────────────
@@ -937,12 +937,12 @@ function App(){
       const b=getRankBase(obj.id,ri,prestige);
       const prev=cur, next=cur+val;
       if(obj.optional){
-        // Quêtes bonus : XP linéaire dès le début + bonus palier quand objectif atteint
+        // Quêtes bonus : XP linéaire dès le début + bonus palier uniquement à partir du palier 2 (2x objectif)
         xp=val*obj.xpPer;
         const prevMult=prev<b?0:Math.floor(prev/b);
         const nextMult=next<b?0:Math.floor(next/b);
-        for(let m=Math.max(1,prevMult+1);m<=nextMult;m++){
-          xp+=b*obj.xpPer; // bonus à chaque palier franchi
+        for(let m=Math.max(2,prevMult+1);m<=nextMult;m++){
+          xp+=b*obj.xpPer; // bonus à chaque palier franchi à partir du 2e
         }
       } else {
         // Quêtes obligatoires : 0 XP si objectif non atteint
@@ -1077,7 +1077,7 @@ function App(){
         });
         if(xp>0){
           const id=Date.now()+Math.random();
-          setFloats(f=>[...f,{id,x:cx,y:cy,txt:"+"+xp+"xp"}]);
+          setFloats(f=>[...f,{id,x:cx,y:cy,txt:"+"+xp+" XP "+(STAT_LBL[obj.stat]||obj.stat)}]);
           setTimeout(()=>setFloats(f=>f.filter(p=>p.id!==id)),1300);
           setState(s=>{
             const sx={...s.statXp,[obj.stat]:(s.statXp[obj.stat]||0)+xp};
@@ -1322,7 +1322,10 @@ function App(){
       const nowComplete=val>=1;
       if(nowComplete){
         const id1=Date.now()+Math.random(), id2=id1+0.1;
-        const xpText = xpPairs.map(p=>"+"+p.xp+" XP "+(STAT_LBL2[p.stat]||p.stat)).join("\n");
+        const xpText = xpPairs.map(p=>{
+          const lbl = STAT_LBL2[p.stat] || STAT_LBL[p.stat] || p.stat || "";
+          return "+"+p.xp+" XP"+(lbl?" "+lbl:"");
+        }).join("\n");
         setFloats(f=>[...f,{id:id1,y:"35%",txt:"\uD83C\uDFC6 QU\u00c9TE VALID\u00c9E !"},{id:id2,y:"40%",txt:xpText}]);
         setTimeout(()=>setFloats(f=>f.filter(p=>p.id!==id1&&p.id!==id2)),1400);
         xpPairs.forEach(p=>addXp(p.xp,p.stat,null,true));
@@ -1645,8 +1648,8 @@ function App(){
     const toggle = k => setOpen(o=>({...o,[k]:!o[k]}));
     const ChevronBtn = ({k}) => h("span",{
       onClick:(e)=>{e.stopPropagation();toggle(k);},
-      style:"cursor:pointer;color:var(--td);font-size:12px;font-family:Orbitron,sans-serif;font-weight:700;display:flex;align-items:center;justify-content:center;width:20px;height:20px;transition:transform .2s;transform:rotate("+(open[k]?180:0)+"deg);flex-shrink:0"
-    },"\u25BE");
+      style:"cursor:pointer;color:var(--td);font-size:10px;font-family:Orbitron,sans-serif;font-weight:700;letter-spacing:1px;flex-shrink:0;user-select:none"
+    },open[k]?"\u25B2":"\u25BC");
     function localDate(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");return y+"-"+m+"-"+day;}
     function getWS(off){const d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7)-off*7);d.setHours(0,0,0,0);return d;}
     const ws=getWS(wkOff);
