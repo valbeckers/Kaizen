@@ -303,11 +303,25 @@ const EPREUVES = [
     desc:"Pas de musique, vid\u00e9os, shorts, ni contenu passif pendant 24h"},
 ];
 
-function pickRandomEpreuve(completedIds, cooldownUntil){
+function pickRandomEpreuve(completedIds, cooldownUntil, statCycle){
   if(cooldownUntil && Date.now() < cooldownUntil) return null;
-  const avail = EPREUVES.filter(e => !completedIds.includes(e.id));
-  if(avail.length === 0) return null;
-  return avail[Math.floor(Math.random() * avail.length)];
+  const allAvail = EPREUVES.filter(e => !completedIds.includes(e.id));
+  if(allAvail.length === 0) return null;
+  const stats=["Sante","Force","Intelligence","Concentration","Endurance","Agilite","Discipline"];
+  const cycle = statCycle||[];
+  const remaining = stats.filter(s=>!cycle.includes(s));
+  const pool = remaining.length===0 ? stats : remaining;
+  // Filtrer pour ne garder que les stats qui ont au moins une épreuve disponible
+  const usable = pool.filter(s=>allAvail.some(e=>e.stat===s));
+  if(usable.length===0){
+    // Fallback : aucune épreuve dispo dans les stats du cycle → on prend n'importe laquelle
+    const ep = allAvail[Math.floor(Math.random()*allAvail.length)];
+    return {tpl:ep, pickedStat:ep.stat, cycleReset:remaining.length===0};
+  }
+  const stat = usable[Math.floor(Math.random()*usable.length)];
+  const avail = allAvail.filter(e=>e.stat===stat);
+  const ep = avail[Math.floor(Math.random()*avail.length)];
+  return {tpl:ep, pickedStat:stat, cycleReset:remaining.length===0};
 }
 
 const getRank    = xp => { for(let i=RANKS.length-1;i>=0;i--)if(xp>=RANKS[i].xpRequired)return RANKS[i]; return RANKS[0]; };
@@ -398,18 +412,26 @@ function calcXp(obj,total){
   return t*obj.xpPer+(total-t)*obj.xpPer*1.5;
 }
 
-function pickRandomSq(usedIds,restMode){
+function pickRandomSq(usedIds,restMode,statCycle){
   const stats=["Sante","Force","Intelligence","Concentration","Endurance","Agilite","Discipline"];
-  const stat=stats[Math.floor(Math.random()*stats.length)];
-  const avail=(SP[stat]||[]).filter(t=>!usedIds.includes(t.id)&&!(t.noRestMode&&restMode));
-  if(avail.length===0){
-    for(const s of stats.filter(x=>x!==stat)){
+  // Stats encore disponibles dans le cycle actuel
+  const cycle = statCycle||[];
+  const remaining = stats.filter(s=>!cycle.includes(s));
+  // Si toutes passées, on redémarre le cycle
+  const pool = remaining.length===0 ? stats : remaining;
+  // Filtrer pour ne garder que les stats qui ont au moins une quête disponible
+  const usable = pool.filter(s=>(SP[s]||[]).some(t=>!usedIds.includes(t.id)&&!(t.noRestMode&&restMode)));
+  if(usable.length===0){
+    // Fallback : aucune quête dispo dans les stats restantes du cycle → on essaie toutes les stats
+    for(const s of stats){
       const a=(SP[s]||[]).filter(t=>!usedIds.includes(t.id)&&!(t.noRestMode&&restMode));
-      if(a.length>0)return {...a[Math.floor(Math.random()*a.length)],stat:s};
+      if(a.length>0)return {tpl:{...a[Math.floor(Math.random()*a.length)],stat:s}, pickedStat:s, cycleReset:remaining.length===0};
     }
     return null;
   }
-  return {...avail[Math.floor(Math.random()*avail.length)],stat};
+  const stat = usable[Math.floor(Math.random()*usable.length)];
+  const avail=(SP[stat]||[]).filter(t=>!usedIds.includes(t.id)&&!(t.noRestMode&&restMode));
+  return {tpl:{...avail[Math.floor(Math.random()*avail.length)],stat}, pickedStat:stat, cycleReset:remaining.length===0};
 }
 
 const IMPORTED_VERSION = "2026-05-11-v4";
@@ -482,6 +504,8 @@ const IMPORTED = {
   epreuveCooldownUntil:null,
   completedEpreuveIds:[],
   completedSqLog:[],
+  sqStatCycle:[],
+  epStatCycle:[],
   objectives:DEFS,
 };
 
@@ -513,6 +537,8 @@ function buildState(){
     epreuveCooldownUntil:saved.epreuveCooldownUntil||null,
     completedEpreuveIds:saved.completedEpreuveIds||[],
     completedSqLog:saved.completedSqLog||[],
+    sqStatCycle:saved.sqStatCycle||[],
+    epStatCycle:saved.epStatCycle||[],
     stats:saved.stats||IMPORTED.stats,
     statXp:saved.statXp||IMPORTED.statXp,
     dailyLog:migratedLog,
@@ -540,10 +566,12 @@ function App(){
     const hasActive=sqs.find(q=>!q.completedAt&&now<q.expiresAt);
     const hasRecent=sqs.find(q=>q.completedAt&&(now-q.completedAt)<86400000);
     if(!hasActive&&!hasRecent){
-      const tpl=pickRandomSq(sqs.map(q=>q.id));
-      if(tpl){
+      const result=pickRandomSq(sqs.map(q=>q.id),base.restMode,base.sqStatCycle);
+      if(result){
+        const {tpl,pickedStat,cycleReset}=result;
         const sq={...tpl,sqid:"sq_"+now,progress:0,startedAt:now,expiresAt:now+tpl.days*86400000,completedAt:null};
-        return {...base,specialQuests:[...sqs.filter(q=>q.completedAt),sq]};
+        const newCycle = cycleReset ? [pickedStat] : [...(base.sqStatCycle||[]),pickedStat];
+        return {...base,specialQuests:[...sqs.filter(q=>q.completedAt),sq],sqStatCycle:newCycle};
       }
     }
     return base;
@@ -853,11 +881,14 @@ function App(){
   // Auto-launch quete speciale si aucune active
   useEffect(()=>{
     if(!activeSq&&!completedSq){
-      const tpl=pickRandomSq(sqs.map(q=>q.id));
-      if(tpl){
+      setState(s=>{
+        const result=pickRandomSq(s.specialQuests.map(q=>q.id),s.restMode,s.sqStatCycle);
+        if(!result)return s;
+        const {tpl,pickedStat,cycleReset}=result;
         const sq={...tpl,sqid:"sq_"+Date.now(),progress:0,startedAt:Date.now(),expiresAt:Date.now()+tpl.days*86400000,completedAt:null};
-        setState(s=>({...s,specialQuests:[...s.specialQuests.filter(q=>q.completedAt),sq]}));
-      }
+        const newCycle = cycleReset ? [pickedStat] : [...(s.sqStatCycle||[]),pickedStat];
+        return {...s,specialQuests:[...s.specialQuests.filter(q=>q.completedAt),sq],sqStatCycle:newCycle};
+      });
     }
   },[]);
 
@@ -891,12 +922,15 @@ function App(){
   // Auto-launch épreuve si epReady
   useEffect(()=>{
     if(!epReady) return;
-    const completedIds = state.completedEpreuveIds||[];
-    const tpl = pickRandomEpreuve(completedIds, cooldownUntil);
-    if(tpl){
+    setState(s=>{
+      const completedIds = s.completedEpreuveIds||[];
+      const result = pickRandomEpreuve(completedIds, cooldownUntil, s.epStatCycle);
+      if(!result)return s;
+      const {tpl,pickedStat,cycleReset}=result;
       const ep={...tpl,epid:"ep_"+Date.now(),progress:0,startedAt:Date.now(),startedAtDay:today,expiresAt:Date.now()+tpl.days*86400000,completedAt:null,failedAt:null,dailyValidations:[]};
-      setState(s=>({...s,epreuves:[...(s.epreuves||[]).filter(e=>e.completedAt||e.failedAt),ep]}));
-    }
+      const newCycle = cycleReset ? [pickedStat] : [...(s.epStatCycle||[]),pickedStat];
+      return {...s,epreuves:[...(s.epreuves||[]).filter(e=>e.completedAt||e.failedAt),ep],epStatCycle:newCycle};
+    });
   },[epReady]);
 
   function spawnFloat(txt,e){
@@ -1034,10 +1068,14 @@ function App(){
   }
 
   function launchNewSq(){
-    const used=sqs.map(q=>q.id);
-    const tpl=pickRandomSq(used); if(!tpl)return;
-    const sq={...tpl,sqid:"sq_"+Date.now(),progress:0,startedAt:Date.now(),expiresAt:Date.now()+tpl.days*86400000,completedAt:null};
-    setState(s=>({...s,specialQuests:[...s.specialQuests.filter(q=>q.completedAt),sq]}));
+    setState(s=>{
+      const result=pickRandomSq(s.specialQuests.map(q=>q.id),s.restMode,s.sqStatCycle);
+      if(!result)return s;
+      const {tpl,pickedStat,cycleReset}=result;
+      const sq={...tpl,sqid:"sq_"+Date.now(),progress:0,startedAt:Date.now(),expiresAt:Date.now()+tpl.days*86400000,completedAt:null};
+      const newCycle = cycleReset ? [pickedStat] : [...(s.sqStatCycle||[]),pickedStat];
+      return {...s,specialQuests:[...s.specialQuests.filter(q=>q.completedAt),sq],sqStatCycle:newCycle};
+    });
   }
 
   function fmtCD(ms){
@@ -1461,7 +1499,7 @@ function App(){
         prestigeAvailable&&h("button",{
           onClick:()=>{
             const newPrestige=(state.prestige||0)+1;
-            setState(s=>({...s,streak:0,streakBonusDay:null,weeklyBonusWk:null,streakMilestones:[],penaltyDay:null,dailyLog:{},weeklyLog:{},specialQuests:[],prestige:newPrestige}));
+            setState(s=>({...s,streak:0,streakBonusDay:null,weeklyBonusWk:null,streakMilestones:[],penaltyDay:null,dailyLog:{},weeklyLog:{},specialQuests:[],sqStatCycle:[],epStatCycle:[],prestige:newPrestige}));
             setPrestigeUp(newPrestige);
           },
           style:"width:100%;margin-top:12px;padding:12px;background:rgba(168,85,247,0.1);border:1px solid #a855f7;border-radius:10px;color:#a855f7;font-family:Orbitron,sans-serif;font-size:12px;letter-spacing:3px;cursor:pointer;text-transform:uppercase;text-shadow:0 0 12px #a855f7"
