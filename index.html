@@ -1414,8 +1414,8 @@ function App(){
       : objs.filter(o=>o.weekly);
     const obligObjs = [...sortStat(objs.filter(o=>o.daily&&!o.optional)), ...sortStat(weeklyObjs)];
     const secs=[
-      {lb:"\u2694 Qu\u00eates obligatoires",ob:obligObjs,iw:false,mixed:true},
-      {lb:"\u2728 Qu\u00eates bonus", ob:sortStat(objs.filter(o=>(o.daily&&o.optional||o.id==="walk")&&!(restMode&&o.id==="walk")&&!o.bonusHidden)), iw:false},
+      {lb:"Qu\u00eates obligatoires",ob:obligObjs,iw:false,mixed:true},
+      {lb:"Qu\u00eates bonus", ob:sortStat(objs.filter(o=>(o.daily&&o.optional||o.id==="walk")&&!(restMode&&o.id==="walk")&&!o.bonusHidden)), iw:false},
     ];
     return h("div",{class:"tab"},
       missedDays>=2&&h("div",{class:"warn"},"\u26A0\uFE0F P\u00e9nalit\u00e9 : -"+(missedDays*10)+" XP ("+missedDays+" jours manqu\u00e9s)"),
@@ -1518,7 +1518,7 @@ function App(){
         )
       ),
       h("div",{class:"card",style:"border-color:#f59e0b44"},
-        h("div",{class:"ctitle",style:"color:"+(activeEp?{mineure:"#fbbf24",majeure:"#f59e0b",legendaire:"#f97316"}[activeEp.tier]||"#f59e0b":"#f59e0b")+";margin-bottom:8px"},"\uD83D\uDD31 \u00c9preuve"+(activeEp?" · "+({mineure:"Mineure",majeure:"Majeure",legendaire:"Légendaire"}[activeEp.tier]||""):"")),
+        h("div",{class:"ctitle",style:"color:"+(activeEp?{mineure:"#fbbf24",majeure:"#f59e0b",legendaire:"#f97316"}[activeEp.tier]||"#f59e0b":"#f59e0b")+";margin-bottom:8px"},"\u00c9preuve"+(activeEp?" · "+({mineure:"Mineure",majeure:"Majeure",legendaire:"Légendaire"}[activeEp.tier]||""):"")),
         activeEp
           ? h(EpCard,{ep:activeEp,showInput:false})
           : cooldownActive
@@ -1526,7 +1526,7 @@ function App(){
             : h("div",{style:"font-size:12px;color:#f59e0b;text-align:center;padding:4px 0"},"\uD83D\uDD0D Nouvelle \u00e9preuve en cours de d\u00e9tection...")
       ),
       activeSq&&h("div",{class:"card",style:"border-color:#ef444444"},
-        h("div",{class:"ctitle",style:"color:#ef4444;margin-bottom:8px"},"\uD83D\uDEA8 Qu\u00eate urgente"+(activeSq.tier?" \u00b7 "+(SQ_TIER_LABEL[activeSq.tier]||""):"")),
+        h("div",{class:"ctitle",style:"color:#ef4444;margin-bottom:8px"},"Qu\u00eate urgente"+(activeSq.tier?" \u00b7 "+(SQ_TIER_LABEL[activeSq.tier]||""):"")),
         h(SqCard,{sq:activeSq,showInput:false})
       ),
       secs.map(({lb,ob,iw,mixed})=>ob.length===0?null:
@@ -1546,7 +1546,7 @@ function App(){
     return h("div",{class:"tab"},
       // ── ÉPREUVE ────────────────────────────────────────────────────────
       h("div",{class:"card",style:"border-color:#f59e0b44"},
-        h("div",{class:"ctitle",style:"color:"+(activeEp?{mineure:"#fbbf24",majeure:"#f59e0b",legendaire:"#f97316"}[activeEp.tier]||"#f59e0b":"#f59e0b")+";margin-bottom:8px"},"\uD83D\uDD31 \u00c9preuve"+(activeEp?" · "+({mineure:"Mineure",majeure:"Majeure",legendaire:"Légendaire"}[activeEp.tier]||""):"")),
+        h("div",{class:"ctitle",style:"color:"+(activeEp?{mineure:"#fbbf24",majeure:"#f59e0b",legendaire:"#f97316"}[activeEp.tier]||"#f59e0b":"#f59e0b")+";margin-bottom:8px"},"\u00c9preuve"+(activeEp?" · "+({mineure:"Mineure",majeure:"Majeure",legendaire:"Légendaire"}[activeEp.tier]||""):"")),
         activeEp
           ? h(EpCard,{ep:activeEp})
           : cooldownActive
@@ -1558,7 +1558,7 @@ function App(){
       h("div",{class:"card",style:"border-color:#ef444444"},
         h("div",{class:"shdr"},
           h("div",null,
-            h("div",{class:"ctitle",style:"margin:0;color:#ef4444"},"\uD83D\uDEA8 Qu\u00eate urgente"+(activeSq&&activeSq.tier?" \u00b7 "+(SQ_TIER_LABEL[activeSq.tier]||""):"")),
+            h("div",{class:"ctitle",style:"margin:0;color:#ef4444"},"Qu\u00eate urgente"+(activeSq&&activeSq.tier?" \u00b7 "+(SQ_TIER_LABEL[activeSq.tier]||""):"")),
             
           )
         ),
@@ -1579,7 +1579,7 @@ function App(){
         !activeSq&&!completedSq&&h("div",{style:"font-size:12px;color:var(--td);text-align:center;padding:8px 0"},"Chargement du d\u00e9fi...")
       ),
       h("div",{class:"card"},
-        h("div",{class:"shdr"},h("div",{class:"ctitle",style:"margin:0"},"\u2694 Qu\u00eates obligatoires")),
+        h("div",{class:"shdr"},h("div",{class:"ctitle",style:"margin:0"},"Qu\u00eates obligatoires")),
         req.map(o=>h(QI,{key:o.id,obj:o})),
         // Carte dette sommeil : méditation 30min obligatoire, sans XP
         sleepDebtMed>0&&(()=>{
@@ -1621,7 +1621,7 @@ function App(){
           wkq.map(o=>h(QI,{key:o.id,obj:o}))
         )
       ),
-      bon.length>0&&h("div",{class:"card"},h("div",{class:"ctitle"},"\u2728 Qu\u00eates bonus"),bon.map(o=>h(QI,{key:o.id,obj:o})))
+      bon.length>0&&h("div",{class:"card"},h("div",{class:"ctitle"},"Qu\u00eates bonus"),bon.map(o=>h(QI,{key:o.id,obj:o})))
     );
   }
 
