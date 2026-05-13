@@ -1702,9 +1702,8 @@ function App(){
     const lbl=wkOff===0?"Cette semaine":wkOff===1?"Semaine derni\u00e8re":fmt(ws)+" \u2013 "+fmt(we);
     const ordered=[...sortStat(objs.filter(o=>o.daily&&!o.optional)),...(restMode&&walkObj?[...sortStat(objs.filter(o=>o.weekly)),walkObj]:sortStat(objs.filter(o=>o.weekly))),...sortStat(objs.filter(o=>o.daily&&o.optional&&!o.bonusHidden))];
 
-    // ── 7 derniers jours ──
-    const last7=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(6-i));return localDate(d);});
-    const last7lbls=last7.map(d=>["D","L","M","M","J","V","S"][new Date(d).getDay()]);
+    // ── Labels jours de la semaine (lun → dim) ──
+    const weekLbls=["L","M","M","J","V","S","D"];
 
     // ── Records personnels (max par quête sur tout le dailyLog) ──
     const records={};
@@ -1720,53 +1719,7 @@ function App(){
       });
     });
 
-    // ── Suggestions intelligentes (quêtes bonus non faites depuis X jours) ──
-    const suggestions=[];
-    objs.filter(o=>(o.optional||o.id==="walk")&&(o.daily||o.id==="walk")&&!o.binary&&!o.bonusHidden).forEach(o=>{
-      let lastDone=null;
-      for(let i=0;i<30;i++){
-        const d=new Date();d.setDate(d.getDate()-i);
-        const dk=localDate(d);
-        const dval=state.dailyLog[dk]?.[o.id]||0;
-        const wval=o.id==="walk"?(state.weeklyLog[wkStr(new Date(dk))]||{}).walk||0:0;
-        if(dval>0||wval>0){lastDone=i;break;}
-      }
-      if(lastDone===null||lastDone>=3){
-        const days=lastDone===null?30:lastDone;
-        const urgency=days>=15?"#ef4444":days>=10?"#f59e0b":days>=7?"#fbbf24":"#94a3b8";
-        const msg=days>=15?days+" jours sans "+o.name+" !":days>=10?days+" jours sans "+o.name:days>=7?o.name+" oubli\u00e9e depuis "+days+" jours":o.name+" pas faite depuis "+days+" jours";
-        suggestions.push({obj:o,days,msg,urgency});
-      }
-    });
-    suggestions.sort((a,b)=>b.days-a.days);
-
     return h("div",{class:"tab"},
-      // Suggestions
-      suggestions.length>0&&h("div",{class:"card",style:"border-color:#ffffff22"},
-        h("div",{class:"ctitle",style:"margin-bottom:8px"},"\uD83D\uDCA1 Suggestions"),
-        suggestions.map(({obj,msg,urgency})=>h("div",{key:obj.id,style:"display:flex;align-items:center;gap:10px;margin-bottom:8px;last-child:{margin-bottom:0}"},
-          h("span",{style:"font-size:16px"},obj.icon),
-          h("span",{style:"font-size:12px;color:"+urgency},msg)
-        ))
-      ),
-      // 7 derniers jours
-      h("div",{class:"card"},
-        h("div",{class:"ctitle"},"Activit\u00e9 (7 derniers jours)"),
-        h("div",{class:"wgrid"},last7.map((d,i)=>{
-          const log=state.dailyLog[d]||{};
-          const xp=Object.entries(log).reduce((s,[id,a])=>{const o=objs.find(x=>x.id===id);return s+(o?calcXp(o,a):0);},0);
-          const allDone=d===today
-            ?reqDailyObjs.every(o=>(log[o.id]||0)>=getTarget(o.base))
-            :activeOn(d).every(o=>(log[o.id]||0)>0);
-          const isPast=d<today;
-          const border=allDone?"2px solid #4ade80":isPast&&xp>0?"2px solid #ef4444":d===today?"1px solid "+rank.color:"1px solid #ffffff18";
-          const shadow=allDone?"0 0 6px #4ade8066":isPast&&xp>0?"0 0 6px #ef444466":"";
-          return h("div",{key:d,class:"wday"},
-            h("div",{class:"wdlbl"},last7lbls[i]),
-            h("div",{class:"wddot",style:"background:#000000;border:"+border+(shadow?";box-shadow:"+shadow:"")})
-          );
-        }))
-      ),
       // Navigation semaine
       h("div",{class:"card",style:"padding:12px 16px"},
         h("div",{style:"display:flex;align-items:center;justify-content:space-between;gap:8px"},
@@ -1779,14 +1732,27 @@ function App(){
         ),
         wkOff>0&&h("button",{style:"width:100%;margin-top:10px;background:rgba(255,255,255,0.03);border:1px solid var(--rc);border-radius:8px;color:var(--rc);font-family:Orbitron,sans-serif;font-size:10px;letter-spacing:2px;padding:7px;cursor:pointer;text-transform:uppercase",onClick:()=>setWkOff(0)},"Aujourd'hui")
       ),
-      // Activité de la semaine
+      // Activité de la semaine (toujours ouvert, avec L M M J V S D en haut)
       h("div",{class:"card"},
-        h("div",{style:"display:flex;align-items:center;justify-content:space-between;cursor:pointer",onClick:()=>toggle("week")},
-          h("div",{class:"ctitle",style:"margin:0"},"\uD83D\uDCCA Activit\u00e9 de la semaine"),
-          h(ChevronBtn,{k:"week"})
-        ),
-        open.week&&h(Fragment,null,
-          h("div",{style:"margin-top:12px"}),
+        h("div",{class:"ctitle"},"\uD83D\uDCCA Activit\u00e9 de la semaine"),
+        // Bandeau jours L M M J V S D
+        h("div",{class:"wgrid",style:"margin-top:8px;margin-bottom:14px"},weekDays.map((d,i)=>{
+          const log=state.dailyLog[d]||{};
+          const xp=Object.entries(log).reduce((s,[id,a])=>{const o=objs.find(x=>x.id===id);return s+(o?calcXp(o,a):0);},0);
+          const isFuture=d>today;
+          const isToday=d===today;
+          const allDone=isToday
+            ?reqDailyObjs.every(o=>(log[o.id]||0)>=getTarget(o.base))
+            :!isFuture&&activeOn(d).every(o=>(log[o.id]||0)>0);
+          const isPast=d<today;
+          const border=isFuture?"1px dashed #ffffff10":allDone?"2px solid #4ade80":isPast&&xp>0?"2px solid #ef4444":isToday?"1px solid "+rank.color:"1px solid #ffffff18";
+          const shadow=allDone?"0 0 6px #4ade8066":isPast&&xp>0?"0 0 6px #ef444466":"";
+          return h("div",{key:d,class:"wday"},
+            h("div",{class:"wdlbl"},weekLbls[i]),
+            h("div",{class:"wddot",style:"background:#000000;border:"+border+(shadow?";box-shadow:"+shadow:"")+(isFuture?";opacity:.3":"")})
+          );
+        })),
+        h(Fragment,null,
           ordered.map(obj=>{
           if(obj.binary){
             const pastDays=weekDays.filter(d=>d<=today);
