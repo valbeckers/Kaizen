@@ -303,6 +303,31 @@ const EPREUVES = [
     desc:"Pas de musique, vid\u00e9os, shorts, ni contenu passif pendant 24h"},
 ];
 
+// Spawn programmé : prochain lundi à 7h00 local (à partir de "from", défaut now)
+// Si on est lundi avant 7h, retourne aujourd'hui 7h.
+function nextMondayAt7(from){
+  const d = new Date(from||Date.now());
+  const day = d.getDay(); // 0=dim, 1=lun, ...
+  const result = new Date(d.getFullYear(),d.getMonth(),d.getDate(),7,0,0,0);
+  if(day===1 && d.getHours()<7){
+    // On est lundi avant 7h → cible aujourd'hui 7h
+    return result.getTime();
+  }
+  // Avance jusqu'au prochain lundi
+  const daysUntilMonday = day===0 ? 1 : (8-day);
+  result.setDate(result.getDate()+daysUntilMonday);
+  return result.getTime();
+}
+
+// Prochain 7h00 (aujourd'hui si on est avant 7h, sinon demain)
+function next7AM(from){
+  const d = new Date(from||Date.now());
+  const result = new Date(d.getFullYear(),d.getMonth(),d.getDate(),7,0,0,0);
+  if(d.getHours()<7) return result.getTime();
+  result.setDate(result.getDate()+1);
+  return result.getTime();
+}
+
 function pickRandomEpreuve(completedIds, cooldownUntil, statCycle){
   if(cooldownUntil && Date.now() < cooldownUntil) return null;
   const allAvail = EPREUVES.filter(e => !completedIds.includes(e.id));
@@ -502,6 +527,7 @@ const IMPORTED = {
   specialQuests:[],
   epreuves:[],
   epreuveCooldownUntil:null,
+  sqCooldownUntil:null,
   completedEpreuveIds:[],
   completedSqLog:[],
   sqStatCycle:[],
@@ -535,6 +561,7 @@ function buildState(){
     specialQuests:saved.specialQuests||[],
     epreuves:saved.epreuves||[],
     epreuveCooldownUntil:saved.epreuveCooldownUntil||null,
+    sqCooldownUntil:saved.sqCooldownUntil||null,
     completedEpreuveIds:saved.completedEpreuveIds||[],
     completedSqLog:saved.completedSqLog||[],
     sqStatCycle:saved.sqStatCycle||[],
@@ -564,14 +591,15 @@ function App(){
     const now=Date.now();
     const sqs=base.specialQuests||[];
     const hasActive=sqs.find(q=>!q.completedAt&&now<q.expiresAt);
-    const hasRecent=sqs.find(q=>q.completedAt&&(now-q.completedAt)<86400000);
-    if(!hasActive&&!hasRecent){
+    const sqCdUntil=base.sqCooldownUntil||0;
+    const cooldownOk = now>=sqCdUntil;
+    if(!hasActive&&cooldownOk){
       const result=pickRandomSq(sqs.map(q=>q.id),base.restMode,base.sqStatCycle);
       if(result){
         const {tpl,pickedStat,cycleReset}=result;
-        const sq={...tpl,sqid:"sq_"+now,progress:0,startedAt:now,expiresAt:now+tpl.days*86400000,completedAt:null};
+        const sq={...tpl,sqid:"sq_"+now,progress:0,startedAt:now,expiresAt:next7AM(now),completedAt:null};
         const newCycle = cycleReset ? [pickedStat] : [...(base.sqStatCycle||[]),pickedStat];
-        return {...base,specialQuests:[...sqs.filter(q=>q.completedAt),sq],sqStatCycle:newCycle};
+        return {...base,specialQuests:[...sqs.filter(q=>q.completedAt),sq],sqStatCycle:newCycle,sqCooldownUntil:next7AM(now)};
       }
     }
     return base;
@@ -792,10 +820,17 @@ function App(){
   })();
 
   // 10. Quete speciale
-  const now         = Date.now();
+  const [now,setNow] = useState(Date.now());
+  useEffect(()=>{
+    const id=setInterval(()=>setNow(Date.now()),30000); // tick toutes les 30s
+    return ()=>clearInterval(id);
+  },[]);
   const sqs         = state.specialQuests||[];
   const activeSq    = sqs.find(q=>!q.completedAt&&now<q.expiresAt)||null;
   const completedSq = sqs.find(q=>q.completedAt&&(now-q.completedAt)<86400000)||null;
+  const sqCooldownUntil = state.sqCooldownUntil||null;
+  const sqCooldownActive = sqCooldownUntil && now < sqCooldownUntil;
+  const sqReady = !activeSq && !sqCooldownActive;
 
   // 11. Épreuves
   const epreuves = state.epreuves||[];
@@ -878,19 +913,24 @@ function App(){
     });
   },[allDailyDone]);
 
-  // Auto-launch quete speciale si aucune active
+  // Auto-launch quete speciale si sqReady (pas active + cooldown passé)
   useEffect(()=>{
-    if(!activeSq&&!completedSq){
-      setState(s=>{
-        const result=pickRandomSq(s.specialQuests.map(q=>q.id),s.restMode,s.sqStatCycle);
-        if(!result)return s;
-        const {tpl,pickedStat,cycleReset}=result;
-        const sq={...tpl,sqid:"sq_"+Date.now(),progress:0,startedAt:Date.now(),expiresAt:Date.now()+tpl.days*86400000,completedAt:null};
-        const newCycle = cycleReset ? [pickedStat] : [...(s.sqStatCycle||[]),pickedStat];
-        return {...s,specialQuests:[...s.specialQuests.filter(q=>q.completedAt),sq],sqStatCycle:newCycle};
-      });
-    }
-  },[]);
+    if(!sqReady) return;
+    setState(s=>{
+      // Re-check dans le setter (state à jour)
+      const sqsNow = s.specialQuests||[];
+      const hasActive = sqsNow.find(q=>!q.completedAt&&Date.now()<q.expiresAt);
+      const cd = s.sqCooldownUntil||0;
+      if(hasActive || Date.now()<cd) return s;
+      const result=pickRandomSq(sqsNow.map(q=>q.id),s.restMode,s.sqStatCycle);
+      if(!result)return s;
+      const {tpl,pickedStat,cycleReset}=result;
+      const t = Date.now();
+      const sq={...tpl,sqid:"sq_"+t,progress:0,startedAt:t,expiresAt:next7AM(t),completedAt:null};
+      const newCycle = cycleReset ? [pickedStat] : [...(s.sqStatCycle||[]),pickedStat];
+      return {...s,specialQuests:[...sqsNow.filter(q=>q.completedAt),sq],sqStatCycle:newCycle,sqCooldownUntil:next7AM(t)};
+    });
+  },[sqReady]);
 
   // Sauvegarder quête urgente complétée dans le log
   useEffect(()=>{
@@ -910,26 +950,31 @@ function App(){
     const startDay = activeEp.startedAtDay;
     if(startDay === today) return; // lancée aujourd'hui, pas encore de vérif
     if(vals.length === 0 || vals[vals.length-1] !== yDay){
-      // Hier non validé → échec
-      const cooldown = EPREUVE_COOLDOWN[activeEp.tier]||0;
+      // Hier non validé → échec : cooldown jusqu'au prochain lundi 7h
       setState(s=>({...s,
         epreuves:s.epreuves.map(e=>e.epid===activeEp.epid?{...e,failedAt:Date.now()}:e),
-        epreuveCooldownUntil:Date.now()+cooldown
+        epreuveCooldownUntil:nextMondayAt7()
       }));
     }
   },[today]);
 
-  // Auto-launch épreuve si epReady
+  // Auto-launch épreuve si epReady (= pas d'épreuve active + cooldown passé)
   useEffect(()=>{
     if(!epReady) return;
     setState(s=>{
+      // Re-check dans le setter
+      const eps = s.epreuves||[];
+      const hasActive = eps.find(e=>!e.completedAt&&!e.failedAt&&Date.now()<e.expiresAt);
+      const cd = s.epreuveCooldownUntil||0;
+      if(hasActive || Date.now()<cd) return s;
       const completedIds = s.completedEpreuveIds||[];
-      const result = pickRandomEpreuve(completedIds, cooldownUntil, s.epStatCycle);
-      if(!result)return s;
+      const result = pickRandomEpreuve(completedIds, cd, s.epStatCycle);
+      if(!result) return s;
       const {tpl,pickedStat,cycleReset}=result;
-      const ep={...tpl,epid:"ep_"+Date.now(),progress:0,startedAt:Date.now(),startedAtDay:today,expiresAt:Date.now()+tpl.days*86400000,completedAt:null,failedAt:null,dailyValidations:[]};
+      const t = Date.now();
+      const ep={...tpl,epid:"ep_"+t,progress:0,startedAt:t,startedAtDay:today,expiresAt:nextMondayAt7(t),completedAt:null,failedAt:null,dailyValidations:[]};
       const newCycle = cycleReset ? [pickedStat] : [...(s.epStatCycle||[]),pickedStat];
-      return {...s,epreuves:[...(s.epreuves||[]).filter(e=>e.completedAt||e.failedAt),ep],epStatCycle:newCycle};
+      return {...s,epreuves:[...(s.epreuves||[]).filter(e=>e.completedAt||e.failedAt),ep],epStatCycle:newCycle,epreuveCooldownUntil:nextMondayAt7(t)};
     });
   },[epReady]);
 
@@ -1054,17 +1099,26 @@ function App(){
     const nowComplete=newProg>=sq.target;
     // XP uniquement à la complétion totale
     if(!wasComplete&&nowComplete){
-      addXp(sq.xp,sq.stat,null,true);
-      if(sq.xp2&&sq.stat2)addXp(sq.xp2,sq.stat2,null,true);
+      const xpPairs = [
+        {xp:sq.xp, stat:sq.stat},
+        sq.xp2&&sq.stat2 ? {xp:sq.xp2, stat:sq.stat2} : null,
+        sq.xp3&&sq.stat3 ? {xp:sq.xp3, stat:sq.stat3} : null,
+      ].filter(Boolean);
+      xpPairs.forEach(p=>addXp(p.xp,p.stat,null,true));
       const id1=Date.now()+Math.random();
       const id2=id1+0.1;
+      const xpText = xpPairs.map(p=>{
+        const lbl = STAT_LBL2[p.stat] || STAT_LBL[p.stat] || p.stat || "";
+        return "+"+p.xp+" XP"+(lbl?" "+lbl:"");
+      }).join("\n");
       setFloats(f=>[...f,
         {id:id1,y:"35%",txt:"\uD83C\uDFC6 QU\u00c9TE VALID\u00c9E !"},
-        {id:id2,y:"40%",txt:"+"+sq.xp+" XP"}
+        {id:id2,y:"40%",txt:xpText}
       ]);
       setTimeout(()=>setFloats(f=>f.filter(p=>p.id!==id1&&p.id!==id2)),1400);
     }
-    setState(s=>({...s,specialQuests:s.specialQuests.map(q=>q.sqid===sq.sqid?{...q,progress:newProg,completedAt:(nowComplete&&!wasComplete)?Date.now():q.completedAt}:q)}));
+    setState(s=>({...s,specialQuests:s.specialQuests.map(q=>q.sqid===sq.sqid?{...q,progress:newProg,completedAt:(nowComplete&&!wasComplete)?Date.now():q.completedAt}:q),
+      sqCooldownUntil:(nowComplete&&!wasComplete)?next7AM():(s.sqCooldownUntil||null)}));
   }
 
   function launchNewSq(){
@@ -1072,7 +1126,7 @@ function App(){
       const result=pickRandomSq(s.specialQuests.map(q=>q.id),s.restMode,s.sqStatCycle);
       if(!result)return s;
       const {tpl,pickedStat,cycleReset}=result;
-      const sq={...tpl,sqid:"sq_"+Date.now(),progress:0,startedAt:Date.now(),expiresAt:Date.now()+tpl.days*86400000,completedAt:null};
+      const sq={...tpl,sqid:"sq_"+Date.now(),progress:0,startedAt:Date.now(),expiresAt:next7AM(Date.now()),completedAt:null};
       const newCycle = cycleReset ? [pickedStat] : [...(s.sqStatCycle||[]),pickedStat];
       return {...s,specialQuests:[...s.specialQuests.filter(q=>q.completedAt),sq],sqStatCycle:newCycle};
     });
@@ -1274,12 +1328,11 @@ function App(){
     }
 
     function grantEpXp(ep){
-      const cooldown = EPREUVE_COOLDOWN[ep.tier]||0;
       addXp(ep.xp, ep.stat, null, true);
       if(ep.xp2&&ep.stat2) addXp(ep.xp2, ep.stat2, null, true);
       if(ep.xp3&&ep.stat3) addXp(ep.xp3, ep.stat3, null, true);
       setState(s=>({...s,
-        epreuveCooldownUntil:Date.now()+cooldown,
+        epreuveCooldownUntil:nextMondayAt7(),
         completedEpreuveIds:[...(s.completedEpreuveIds||[]),ep.id]
       }));
       const totalXp=(ep.xp||0)+(ep.xp2||0)+(ep.xp3||0);
@@ -1369,7 +1422,8 @@ function App(){
         xpPairs.forEach(p=>addXp(p.xp,p.stat,null,true));
       }
       setState(s=>({...s,specialQuests:s.specialQuests.map(q=>q.sqid===sq.sqid
-        ?{...q,progress:val,completedAt:nowComplete?Date.now():q.completedAt}:q)}));
+        ?{...q,progress:val,completedAt:nowComplete?Date.now():q.completedAt}:q),
+        sqCooldownUntil:nowComplete?next7AM():(s.sqCooldownUntil||null)}));
     }
 
     const tier = sq.tier || "majeure";
@@ -1499,7 +1553,7 @@ function App(){
         prestigeAvailable&&h("button",{
           onClick:()=>{
             const newPrestige=(state.prestige||0)+1;
-            setState(s=>({...s,streak:0,streakBonusDay:null,weeklyBonusWk:null,streakMilestones:[],penaltyDay:null,dailyLog:{},weeklyLog:{},specialQuests:[],sqStatCycle:[],epStatCycle:[],prestige:newPrestige}));
+            setState(s=>({...s,streak:0,streakBonusDay:null,weeklyBonusWk:null,streakMilestones:[],penaltyDay:null,dailyLog:{},weeklyLog:{},specialQuests:[],sqStatCycle:[],epStatCycle:[],sqCooldownUntil:null,prestige:newPrestige}));
             setPrestigeUp(newPrestige);
           },
           style:"width:100%;margin-top:12px;padding:12px;background:rgba(168,85,247,0.1);border:1px solid #a855f7;border-radius:10px;color:#a855f7;font-family:Orbitron,sans-serif;font-size:12px;letter-spacing:3px;cursor:pointer;text-transform:uppercase;text-shadow:0 0 12px #a855f7"
@@ -1528,6 +1582,10 @@ function App(){
       activeSq&&h("div",{class:"card",style:"border-color:#ef444444"},
         h("div",{class:"ctitle",style:"color:#ef4444;margin-bottom:8px"},"Qu\u00eate urgente"+(activeSq.tier?" \u00b7 "+(SQ_TIER_LABEL[activeSq.tier]||""):"")),
         h(SqCard,{sq:activeSq,showInput:false})
+      ),
+      !activeSq&&sqCooldownActive&&h("div",{class:"card",style:"border-color:#ef444433"},
+        h("div",{class:"ctitle",style:"color:#ef4444;margin-bottom:8px"},"Qu\u00eate urgente"),
+        h("div",{style:"font-size:11px;color:var(--td);text-align:center;padding:4px 0;font-family:Orbitron,sans-serif"},"\u23F3 Prochaine qu\u00eate dans "+fmtCD(sqCooldownUntil-now))
       ),
       secs.map(({lb,ob,iw,mixed})=>ob.length===0?null:
         h("div",{key:lb,class:"card"},h("div",{class:"ctitle"},lb),ob.map(o=>h(RR,{key:o.id,obj:o,isW:mixed?(o.weekly||o.id==="walk"):iw})))
@@ -1571,12 +1629,15 @@ function App(){
               h("div",{style:"font-size:11px;color:var(--td);margin-top:2px"},"+"+completedSq.xp+" XP \u00b7 "+(STAT_LBL[completedSq.stat]||completedSq.stat))
             )
           ),
-          h("button",{class:"addbtn",style:"border-color:#ef444466;color:#ef4444;width:100%;margin-top:10px;text-align:center",onClick:()=>{
-            setState(s=>({...s,specialQuests:s.specialQuests.filter(q=>q.sqid!==completedSq.sqid)}));
-            launchNewSq();
-          }},"\uD83C\uDFB2 Lancer un nouveau d\u00e9fi")
+          sqCooldownActive&&h("div",{style:"font-size:11px;color:var(--td);text-align:center;padding:8px 0 4px;font-family:Orbitron,sans-serif"},"\u23F3 Prochaine qu\u00eate dans "+fmtCD(sqCooldownUntil-now))
         ),
-        !activeSq&&!completedSq&&h("div",{style:"font-size:12px;color:var(--td);text-align:center;padding:8px 0"},"Chargement du d\u00e9fi...")
+        !activeSq&&!completedSq&&(sqCooldownActive
+          ? h("div",{class:"card"},
+              h("div",{class:"ctitle",style:"color:#ef4444;margin-bottom:8px"},"Qu\u00eate urgente"),
+              h("div",{style:"font-size:11px;color:var(--td);text-align:center;padding:4px 0;font-family:Orbitron,sans-serif"},"\u23F3 Prochaine qu\u00eate dans "+fmtCD(sqCooldownUntil-now))
+            )
+          : h("div",{style:"font-size:12px;color:var(--td);text-align:center;padding:8px 0"},"Chargement du d\u00e9fi...")
+        )
       ),
       h("div",{class:"card"},
         h("div",{class:"shdr"},h("div",{class:"ctitle",style:"margin:0"},"Qu\u00eates obligatoires")),
