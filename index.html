@@ -280,7 +280,7 @@ const EPREUVES = [
     desc:"60 minutes cumul\u00e9es de chaise"},
   {id:"ep_book",     name:"Lire un livre complet (300+ pages)", icon:"\uD83D\uDCDA",                             stat:"Intelligence", xp:1000, xp2:500, stat2:"Concentration", days:7, binary:true,
     desc:"Terminer un livre de 300 pages ou plus"},
-  {id:"ep_project",  name:"4h de travail sur un projet personnel",icon:"\uD83E\uDDE0",                           stat:"Intelligence", xp:500,  xp2:500, stat2:"Concentration", xp3:500, stat3:"Discipline", days:7, unit:"h", target:4,
+  {id:"ep_project",  name:"4h de travail sur un projet personnel",icon:"\uD83E\uDDE0",                           stat:"Intelligence", xp:500,  xp2:500, stat2:"Concentration", xp3:500, stat3:"Discipline", days:7, unit:"min", target:240,
     desc:"4 heures de travail sur un projet personnel"},
   {id:"ep_medweek",  name:"M\u00e9ditation quotidienne",        icon:"\uD83E\uDDD8\uD83C\uDFFB\u200D\u2642\uFE0F",stat:"Concentration",xp:1500, days:7, streak7:true, streakDays:7, unit:"jour", target:7,
     desc:"M\u00e9diter chaque jour pendant 7 jours"},
@@ -847,6 +847,8 @@ function App(){
   // 11. Épreuves
   const epreuves = state.epreuves||[];
   const activeEp = epreuves.find(e=>!e.completedAt&&!e.failedAt&&now<e.expiresAt)||null;
+  // Épreuve récemment complétée (visible tant que le cooldown court)
+  const completedEp = epreuves.find(e=>e.completedAt&&(now-e.completedAt)<(7*86400000))||null;
   const cooldownUntil = state.epreuveCooldownUntil||null;
   const cooldownActive = cooldownUntil && now < cooldownUntil;
   const epReady = !activeEp && !cooldownActive;
@@ -1102,10 +1104,16 @@ function App(){
     } else spawnFloat("0 XP",e);
   }
 
-  function progressSq(sq,e){
-    const el=document.getElementById("sqi_"+sq.sqid); if(!el)return;
-    const raw=el.value.toString().replace(",","."); el.value="";
-    const val=parseFloat(raw); if(!val||val<=0)return;
+  function progressSq(sq,e,directVal){
+    let val;
+    if(directVal!==undefined){
+      val = directVal;
+    } else {
+      const el=document.getElementById("sqi_"+sq.sqid); if(!el)return;
+      const raw=el.value.toString().replace(",","."); el.value="";
+      val=parseFloat(raw);
+    }
+    if(!val||val<=0)return;
     const newProg=Math.min(sq.target,sq.progress+val);
     const wasComplete=sq.progress>=sq.target;
     const nowComplete=newProg>=sq.target;
@@ -1395,15 +1403,25 @@ function App(){
           ? h("button",{onClick:()=>completeEp(1),style:"width:100%;margin-top:8px;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer;letter-spacing:1px"},"\u2713 Succ\u00e8s")
           : ep.streak7
             ? h("button",{onClick:()=>completeEp(1),disabled:todayValidated,style:"width:100%;margin-top:8px;padding:10px;border-radius:8px;border:1px solid "+(todayValidated?"#4ade8055":tierColor+"55")+";background:"+(todayValidated?"#4ade8011":tierColor+"11")+";color:"+(todayValidated?"#4ade80":tierColor)+";font-family:Orbitron,sans-serif;font-size:11px;cursor:"+(todayValidated?"default":"pointer")+";letter-spacing:1px"},todayValidated?"Fait aujourd'hui \u2713":"Fait aujourd'hui \u2713")
-            : ep.id==="ep_100pull"
-              ? h("div",{style:"display:flex;gap:8px;margin-top:8px"},
-                  h("button",{onClick:()=>completeEp(1),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+1 rep"),
-                  h("button",{onClick:()=>completeEp(10),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+10 reps")
+            : ep.unit==="km"
+              ? h("div",{class:"qinrow",style:"margin-top:8px"},
+                  h("input",{id:"epi_"+ep.epid,class:"qin",type:"text",inputMode:"decimal",placeholder:"+ km",style:"border-color:"+tierColor+"55"}),
+                  h("button",{class:"qbtn",style:"border-color:"+tierColor+"55;color:"+tierColor,onClick:()=>{
+                    const el=document.getElementById("epi_"+ep.epid); if(!el)return;
+                    const raw=el.value.toString().replace(",","."); el.value="";
+                    const v=parseFloat(raw); if(!v||v<=0)return;
+                    completeEp(v);
+                  }},"+XP")
                 )
-              : h("div",{style:"display:flex;gap:8px;margin-top:8px"},
-                  h("button",{onClick:()=>completeEp(30),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+30 min"),
-                  h("button",{onClick:()=>completeEp(60),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+1h")
-                )
+              : ep.id==="ep_project"
+                ? h("div",{style:"display:flex;gap:8px;margin-top:8px"},
+                    h("button",{onClick:()=>completeEp(10),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+10 min"),
+                    h("button",{onClick:()=>completeEp(60),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+1 h")
+                  )
+                : h("div",{style:"display:flex;gap:8px;margin-top:8px"},
+                    h("button",{onClick:()=>completeEp(1),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+1 "+ep.unit),
+                    h("button",{onClick:()=>completeEp(10),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+10 "+ep.unit)
+                  )
       )
     );
   }
@@ -1464,9 +1482,14 @@ function App(){
           ?h("div",{style:"display:flex;gap:8px;margin-top:8px"},
               h("button",{onClick:e=>completeBinary(1,e),style:"flex:1;padding:10px;border-radius:8px;border:1px solid #4ade8044;background:rgba(255,255,255,0.03);color:#4ade80;font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer;letter-spacing:1px"},"Succ\u00e8s \u2713")
             )
-          :h("div",{class:"qinrow",style:"margin-top:8px"},
-              h("input",{id:"sqi_"+sq.sqid,class:"qin",type:"text",inputMode:"decimal",placeholder:"+ "+sq.unit,style:"border-color:#ef444466"}),
-              h("button",{class:"qbtn",style:"border-color:#ef444466;color:#ef4444",onClick:e=>progressSq(sq,e)},"+XP")
+          :sq.unit==="km"
+            ?h("div",{class:"qinrow",style:"margin-top:8px"},
+                h("input",{id:"sqi_"+sq.sqid,class:"qin",type:"text",inputMode:"decimal",placeholder:"+ km",style:"border-color:#ef444466"}),
+                h("button",{class:"qbtn",style:"border-color:#ef444466;color:#ef4444",onClick:e=>progressSq(sq,e)},"+XP")
+              )
+          :h("div",{style:"display:flex;gap:8px;margin-top:8px"},
+              h("button",{onClick:e=>progressSq(sq,e,1),style:"flex:1;padding:10px;border-radius:8px;border:1px solid #ef444466;background:rgba(255,255,255,0.03);color:#ef4444;font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer;letter-spacing:1px"},"+1 "+sq.unit),
+              h("button",{onClick:e=>progressSq(sq,e,10),style:"flex:1;padding:10px;border-radius:8px;border:1px solid #ef444466;background:rgba(255,255,255,0.03);color:#ef4444;font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer;letter-spacing:1px"},"+10 "+sq.unit)
             )
       ),
       done&&showInput&&h("div",{style:"text-align:center;padding:8px 0;font-size:12px;color:#4ade80;font-family:Orbitron,sans-serif"},"\u2705 Compl\u00e9t\u00e9e !")
@@ -1617,14 +1640,29 @@ function App(){
     return h("div",{class:"tab"},
       // ── ÉPREUVE ────────────────────────────────────────────────────────
       h("div",{class:"card",style:"border-color:#f59e0b44"},
-        h("div",{class:"ctitle",style:"color:"+(activeEp?{mineure:"#fbbf24",majeure:"#f59e0b",legendaire:"#f97316"}[activeEp.tier]||"#f59e0b":"#f59e0b")+";margin-bottom:8px"},"\u00c9preuve"),
+        h("div",{class:"ctitle",style:"color:#f59e0b;margin-bottom:8px"},"\u00c9preuve"),
         activeEp
           ? h(EpCard,{ep:activeEp})
-          : cooldownActive
-            ? h("div",{style:"font-size:11px;color:var(--td);text-align:center;padding:8px 0;font-family:Orbitron,sans-serif"},
-                "\u23F3 Prochain d\u00e9fi dans "+fmtCD(cooldownUntil-now))
-            : h("div",{style:"font-size:12px;color:#f59e0b;text-align:center;padding:8px 0"},
-                "\uD83D\uDD0D Le syst\u00e8me d\u00e9tecte une nouvelle \u00e9preuve...")
+          : completedEp
+            ? h("div",{class:"sqcard"},
+                h("div",{style:"display:flex;align-items:center;gap:10px"},
+                  h("span",{style:"font-size:20px"},completedEp.icon),
+                  h("div",{style:"flex:1"},
+                    h("div",{style:"font-size:13px;font-weight:700;color:#4ade80"},completedEp.name+" \u2014 COMPL\u00c9T\u00c9 \u2705"),
+                    h("div",{style:"font-size:11px;color:var(--td);margin-top:2px"},
+                      ("+"+completedEp.xp+" XP \u00b7 "+(STAT_LBL[completedEp.stat]||completedEp.stat))
+                      +(completedEp.xp2&&completedEp.stat2?(" \u00b7 +"+completedEp.xp2+" XP "+(STAT_LBL[completedEp.stat2]||completedEp.stat2)):"")
+                      +(completedEp.xp3&&completedEp.stat3?(" \u00b7 +"+completedEp.xp3+" XP "+(STAT_LBL[completedEp.stat3]||completedEp.stat3)):"")
+                    )
+                  )
+                ),
+                cooldownActive&&h("div",{style:"font-size:11px;color:var(--td);text-align:center;padding:8px 0 4px;font-family:Orbitron,sans-serif"},"\u23F3 Prochain d\u00e9fi dans "+fmtCD(cooldownUntil-now))
+              )
+            : cooldownActive
+              ? h("div",{style:"font-size:11px;color:var(--td);text-align:center;padding:8px 0;font-family:Orbitron,sans-serif"},
+                  "\u23F3 Prochain d\u00e9fi dans "+fmtCD(cooldownUntil-now))
+              : h("div",{style:"font-size:12px;color:#f59e0b;text-align:center;padding:8px 0"},
+                  "\uD83D\uDD0D Le syst\u00e8me d\u00e9tecte une nouvelle \u00e9preuve...")
       ),
       h("div",{class:"card",style:"border-color:#ef444444"},
         h("div",{class:"shdr"},
