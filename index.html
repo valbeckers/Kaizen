@@ -216,6 +216,7 @@ const DEFS = [
   {id:"run",    name:"Course",          unit:"km",    xpPer:100, daily:false,weekly:true, optional:false,stat:"Endurance",      icon:"\uD83C\uDFC3\uD83C\uDFFB",   base:7,  stat2:"Agilite", xpPer2:20},
   {id:"walk",   name:"Marche",          unit:"km",    xpPer:50,  daily:false,weekly:false,optional:true, stat:"Endurance",      icon:"\uD83D\uDEB6\uD83C\uDFFB\u200D\u2642\uFE0F", base:5, fixedBase:true, bonusHidden:true},
   // ─── AGILITÉ ──────────────────────────────────────────────────────────
+  {id:"mob",    name:"Mobilit\u00e9 matinale",unit:"min",xpPer:15,daily:true,weekly:false,optional:false,stat:"Agilite",          icon:"\uD83E\uDD38\uD83C\uDFFB\u200D\u2642\uFE0F", base:15, fixedBase:true, startDate:"2026-05-15"},
   {id:"flex",   name:"Souplesse",       unit:"min",   xpPer:15,  daily:true, weekly:false,optional:true, stat:"Agilite",        icon:"\uD83E\uDD38\uD83C\uDFFB",   base:15, fixedBase:true},
   {id:"balance",name:"\u00c9quilibre sur un pied",unit:"min",xpPer:15,daily:true,weekly:false,optional:true,stat:"Agilite",     icon:"\uD83E\uDDB6\uD83C\uDFFB",   base:10, fixedBase:true},
   {id:"flow",   name:"Animal flow",     unit:"min",   xpPer:15,  daily:true, weekly:false,optional:true, stat:"Agilite",        icon:"\uD83D\uDC0A",               base:10, fixedBase:true, bonusHidden:true},
@@ -622,6 +623,7 @@ function App(){
   const [rankUp,setRankUp] = useState(null);
   const [prestigeUp,setPrestigeUp] = useState(null);
   const [showStatReqDetail,setShowStatReqDetail] = useState(false);
+  const [mobOpen,setMobOpen] = useState(false);
   const [floats,setFloats] = useState([]);
   const [showSet,setShowSet]       = useState(false);
   const [confirmReset,setConfirmReset] = useState(false);
@@ -1245,9 +1247,9 @@ function App(){
           )
       ),
       (()=>{
-        const QUICK_IDS=["push","abs","squats","calves","reading","flex","balance","flow","grips","med","water"];
-        const unitLabel={push:"rep",abs:"rep",squats:"rep",calves:"rep",reading:"page",flex:"min",balance:"min",flow:"min",grips:"min",med:"min",water:"verre"};
-        const unitLabelPlural={push:"reps",abs:"reps",squats:"reps",calves:"reps",reading:"pages",flex:"min",balance:"min",flow:"min",grips:"min",med:"min",water:"verres"};
+        const QUICK_IDS=["push","abs","squats","calves","reading","flex","balance","flow","grips","med","water","mob"];
+        const unitLabel={push:"rep",abs:"rep",squats:"rep",calves:"rep",reading:"page",flex:"min",balance:"min",flow:"min",grips:"min",med:"min",water:"verre",mob:"min"};
+        const unitLabelPlural={push:"reps",abs:"reps",squats:"reps",calves:"reps",reading:"pages",flex:"min",balance:"min",flow:"min",grips:"min",med:"min",water:"verres",mob:"min"};
         if(QUICK_IDS.includes(obj.id)){
           const lbl=unitLabel[obj.id]||obj.unit;
           const lblPl=unitLabelPlural[obj.id]||obj.unit;
@@ -1272,8 +1274,60 @@ function App(){
             if(el)el.value="";
           }},"+XP")
         );
-      })()
-
+      })(),
+      // Menu déroulant des exercices pour Mobilité matinale
+      obj.id==="mob"&&h(Fragment,null,
+        h("div",{
+          onClick:()=>setMobOpen(v=>!v),
+          style:"display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:6px 8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;cursor:pointer;user-select:none;font-size:10px;font-family:Orbitron,sans-serif;letter-spacing:1px"
+        },
+          h("span",{style:"color:var(--td);text-transform:uppercase"},"Programme 5\u00d73min"),
+          h("span",{style:"color:var(--td)"},mobOpen?"\u25B2":"\u25BC")
+        ),
+        mobOpen&&h("div",{style:"margin-top:8px;padding:10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:6px;font-size:11px;color:var(--tx);line-height:1.5"},
+          h("div",{style:"margin-bottom:10px"},
+            h("div",{style:"font-weight:700;color:"+(STAT_COLOR.Agilite||"#4ade80")},"1. Hanches & jambes \u00b7 3min"),
+            h("div",{style:"color:var(--td);font-size:10px;margin-top:3px"},
+              h("div",null,"\u2022 Cercles de hanches : 10 par sens (1min)"),
+              h("div",null,"\u2022 Leg swings avant/arri\u00e8re : 10 par jambe (1min)"),
+              h("div",null,"\u2022 Leg swings lat\u00e9raux : 10 par jambe (1min)")
+            )
+          ),
+          h("div",{style:"margin-bottom:10px"},
+            h("div",{style:"font-weight:700;color:"+(STAT_COLOR.Agilite||"#4ade80")},"2. Colonne thoracique \u00b7 3min"),
+            h("div",{style:"color:var(--td);font-size:10px;margin-top:3px"},
+              h("div",null,"\u2022 Cat-cow : 15 cycles (1min30)"),
+              h("div",null,"\u2022 Cobra-enfant altern\u00e9 : 15 cycles (1min30)")
+            )
+          ),
+          h("div",{style:"margin-bottom:10px"},
+            h("div",{style:"font-weight:700;color:"+(STAT_COLOR.Agilite||"#4ade80")},"3. \u00c9paules \u00b7 3min"),
+            h("div",{style:"color:var(--td);font-size:10px;margin-top:3px"},
+              h("div",null,"\u2022 Arm circles : 5 par sens par c\u00f4t\u00e9 (1min30)"),
+              h("div",null,"\u2022 Wall slides W \u2192 Y : 10 r\u00e9p\u00e9titions (1min30)")
+            )
+          ),
+          h("div",{style:"margin-bottom:10px"},
+            h("div",{style:"font-weight:700;color:"+(STAT_COLOR.Agilite||"#4ade80")},"4. Rotation & lat\u00e9ral \u00b7 3min"),
+            h("div",{style:"color:var(--td);font-size:10px;margin-top:3px"},
+              h("div",null,"\u2022 T-spine rotations : 8 par c\u00f4t\u00e9 (1min)"),
+              h("div",null,"\u2022 Side bends : 8 par c\u00f4t\u00e9 (1min)"),
+              h("div",null,"\u2022 World's greatest stretch : 4 par c\u00f4t\u00e9 (1min)")
+            )
+          ),
+          h("div",null,
+            h("div",{style:"font-weight:700;color:"+(STAT_COLOR.Agilite||"#4ade80")},"5. \u00c9quilibre & finition \u00b7 3min"),
+            h("div",{style:"color:var(--td);font-size:10px;margin-top:3px"},
+              h("div",null,"\u2022 \u00c9quilibre un pied yeux ferm\u00e9s : 30s par pied (1min)"),
+              h("div",null,"\u2022 Forward fold (flexion avant) respir\u00e9e : 6 respirations lentes (1min)"),
+              h("div",null,"\u2022 Ancrage debout (pieds parall\u00e8les, respirations profondes) : 1min")
+            )
+          ),
+          h("div",{style:"margin-top:12px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.05);font-size:10px;color:var(--td);font-style:italic"},
+            "Respiration nasale uniquement \u00b7 amplitude max, vitesse min"
+          )
+        )
+      )
     );
   }
 
@@ -1671,8 +1725,9 @@ function App(){
             
           )
         ),
-        activeSq&&h(SqCard,{sq:activeSq,showInput:true}),
-        completedSq&&h("div",{class:"sqcard"},
+        activeSq
+          ? h(SqCard,{sq:activeSq,showInput:true})
+          : completedSq && h("div",{class:"sqcard"},
           h("div",{style:"display:flex;align-items:center;gap:10px"},
             h("span",{style:"font-size:20px"},completedSq.icon),
             h("div",{style:"flex:1"},
