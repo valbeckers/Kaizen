@@ -1027,9 +1027,10 @@ function App(){
     if(el){el.value="";setTimeout(()=>{try{el.focus();}catch(_){}},50);}
     const cur=(obj.weekly||obj.id==="walk")?(wLog[obj.id]||0):(tLog[obj.id]||0);
     let xp=0;
-    const PALIER_IDS=["push","abs","squats","calves","reading","med","flex","grips","walk"];
+    // Tout objectif avec un base, non-binary, hors cas spéciaux (water/run) entre dans le système palier
+    const isPalier = obj.base && !obj.binary && obj.id!=="water" && obj.id!=="run";
     if(obj.binary){const was=cur>=getRankBase(obj.id,ri,prestige),now2=(cur+val)>=getRankBase(obj.id,ri,prestige); xp=(!was&&now2)?(obj.binaryXp||50):0;}
-    else if(PALIER_IDS.includes(obj.id)){
+    else if(isPalier){
       const b=getRankBase(obj.id,ri,prestige);
       const prev=cur, next=cur+val;
       if(obj.optional){
@@ -1591,16 +1592,16 @@ function App(){
         ),
         h("div",{class:"xpbar",style:"height:8px"},h("div",{class:"xpfill",style:"width:"+(nextRank?rankPct:Math.min(100,((effectiveXp-ASCENSION_XP_START)/(ASCENSION_XP_NEEDED-ASCENSION_XP_START))*100))+"%"})),
         h("div",{style:"display:flex;justify-content:space-between;font-size:10px;color:var(--td);margin-top:5px;font-family:Orbitron,sans-serif"},
-          h("span",null,state.totalXp.toFixed(0)+" XP"),
+          h("span",null,Math.round(state.totalXp).toLocaleString("fr-FR")+" XP"),
           nextRank
             ? (rankBlocked
                 ? h("span",{style:"color:#fb923c"},"Stats requises non atteintes")
-                : h("span",{style:"color:var(--rc)"},(nextRank.xpRequired-state.totalXp).toFixed(0)+" XP manquants"))
+                : h("span",{style:"color:var(--rc)"},Math.round(nextRank.xpRequired-state.totalXp).toLocaleString("fr-FR")+" XP manquants"))
             : prestigeAvailable
               ? h("span",{style:"color:#a855f7"},"Ascension disponible !")
               : prestigeBlocked
                 ? h("span",{style:"color:#fb923c"},"Stats requises non atteintes")
-                : h("span",{style:"color:var(--rc)"},(ASCENSION_XP_NEEDED-effectiveXp).toFixed(0)+" XP avant Ascension "+(ROMAN[prestige]||"I"))
+                : h("span",{style:"color:var(--rc)"},Math.round(ASCENSION_XP_NEEDED-effectiveXp).toLocaleString("fr-FR")+" XP avant Ascension "+(ROMAN[prestige]||"I"))
         ),
         // Condition de stats pour le prochain palier (rang ou ascension)
         (()=>{
@@ -2043,7 +2044,7 @@ function App(){
                   )
                 ),
                 h("span",{style:"font-family:Orbitron,sans-serif;font-size:10px;color:var(--tx)"},
-                  total===0?"—":(total%1===0?total:total.toFixed(1))+(total>0?" "+unitLbl:""))
+                  total===0?"—":(total%1===0?total.toLocaleString("fr-FR"):total.toLocaleString("fr-FR",{minimumFractionDigits:1,maximumFractionDigits:1}))+(total>0?" "+unitLbl:""))
               );
             })
           )// end Fragment
