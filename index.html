@@ -216,9 +216,8 @@ const DEFS = [
   {id:"run",    name:"Course",          unit:"km",    xpPer:100, daily:false,weekly:true, optional:false,stat:"Endurance",      icon:"\uD83C\uDFC3\uD83C\uDFFB",   base:7,  stat2:"Agilite", xpPer2:20},
   {id:"walk",   name:"Marche",          unit:"km",    xpPer:50,  daily:false,weekly:false,optional:true, stat:"Endurance",      icon:"\uD83D\uDEB6\uD83C\uDFFB\u200D\u2642\uFE0F", base:5, fixedBase:true, bonusHidden:true},
   // ─── AGILITÉ ──────────────────────────────────────────────────────────
-  {id:"mob",    name:"Mobilit\u00e9 matinale",unit:"min",xpPer:15,daily:true,weekly:false,optional:false,stat:"Agilite",          icon:"\uD83E\uDD38\uD83C\uDFFB\u200D\u2642\uFE0F", base:15, fixedBase:true, startDate:"2026-05-15"},
-  {id:"flex",   name:"Souplesse",       unit:"min",   xpPer:15,  daily:true, weekly:false,optional:true, stat:"Agilite",        icon:"\uD83E\uDD38\uD83C\uDFFB",   base:15, fixedBase:true},
-  {id:"balance",name:"\u00c9quilibre sur un pied",unit:"min",xpPer:15,daily:true,weekly:false,optional:true,stat:"Agilite",     icon:"\uD83E\uDDB6\uD83C\uDFFB",   base:10, fixedBase:true},
+  {id:"flex",   name:"Souplesse",       unit:"min",   xpPer:30,  daily:true, weekly:false,optional:true, stat:"Agilite",        icon:"\uD83E\uDD38\uD83C\uDFFB",   base:15, fixedBase:true},
+  {id:"balance",name:"\u00c9quilibre sur un pied",unit:"min",xpPer:10,daily:true,weekly:false,optional:false,stat:"Agilite",    icon:"\uD83E\uDDB6\uD83C\uDFFB",   base:5, startDate:"2026-05-15"},
   {id:"flow",   name:"Animal flow",     unit:"min",   xpPer:15,  daily:true, weekly:false,optional:true, stat:"Agilite",        icon:"\uD83D\uDC0A",               base:10, fixedBase:true, bonusHidden:true},
   // ─── DISCIPLINE ───────────────────────────────────────────────────────
   {id:"nophone",name:"T\u00e9l\u00e9phone hors de port\u00e9e 3h",unit:"jour",xpPer:0,daily:true,weekly:false,optional:true,stat:"Discipline",icon:"\uD83D\uDCF5", base:1, binary:true, binaryXp:200, bonusHidden:true},
@@ -285,7 +284,7 @@ const EPREUVES = [
     desc:"4 heures de travail sur un projet personnel"},
   {id:"ep_medweek",  name:"M\u00e9ditation quotidienne",        icon:"\uD83E\uDDD8\uD83C\uDFFB\u200D\u2642\uFE0F",stat:"Concentration",xp:1500, days:7, streak7:true, streakDays:7, unit:"jour", target:7,
     desc:"M\u00e9diter chaque jour pendant 7 jours"},
-  {id:"ep_deepwork5",name:"Deep Work 60min",                    icon:"\u26AB",                                   stat:"Concentration",xp:2000, xp2:1000, stat2:"Discipline", days:7, streak7:true, streakDays:5, unit:"jour", target:5,
+  {id:"ep_deepwork5",name:"Deep Work 60min",                    icon:"\u26AB",                                   stat:"Concentration",xp:2000, xp2:1000, stat2:"Discipline", days:7, cumDays:true, streakDays:5, unit:"jour", target:5,
     desc:"60 min de deep work 5 jours de suite"},
   {id:"ep_hike",     name:"Randonn\u00e9e longue (5h+)",        icon:"\u26F0\uFE0F",                             stat:"Endurance",    xp:2000, days:7, binary:true,
     desc:"Randonn\u00e9e de 5 heures minimum"},
@@ -303,6 +302,8 @@ const EPREUVES = [
     desc:"Z\u00e9ro junk-food pendant 7 jours"},
   {id:"ep_clean",    name:"Nettoyage total d'une pi\u00e8ce",   icon:"\uD83E\uDDF9",                             stat:"Discipline",   xp:1500, days:7, binary:true,
     desc:"Nettoyer compl\u00e8tement une pi\u00e8ce"},
+  {id:"ep_mob",      name:"Mobilit\u00e9 matinale",             icon:"\uD83E\uDD38\uD83C\uDFFB\u200D\u2642\uFE0F",stat:"Agilite",     xp:2500, days:7, cumDays:true, streakDays:5, unit:"jour", target:5,
+    desc:"Faire 15 min de mobilit\u00e9 5 jours sur 7"},
 ];
 
 // Spawn programmé : prochain lundi à 7h00 local (à partir de "from", défaut now)
@@ -383,7 +384,7 @@ const RANK_BASES = {
   run:     [5,  7,  9,   11,  13,  15],
   med:     [15, 18, 21,  24,  27,  30],
   flex:    [15, 18, 21,  24,  27,  30],
-  balance: [10, 12, 14,  16,  18,  20],
+  balance: [5,  10, 15,  20,  25,  30],
   flow:    [15, 18, 21,  24,  27,  30],
   grips:   [10, 12, 14,  16,  18,  20],
 };
@@ -1274,60 +1275,7 @@ function App(){
             if(el)el.value="";
           }},"+XP")
         );
-      })(),
-      // Menu déroulant des exercices pour Mobilité matinale
-      obj.id==="mob"&&h(Fragment,null,
-        h("div",{
-          onClick:()=>setMobOpen(v=>!v),
-          style:"display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:6px 8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;cursor:pointer;user-select:none;font-size:10px;font-family:Orbitron,sans-serif;letter-spacing:1px"
-        },
-          h("span",{style:"color:var(--td);text-transform:uppercase"},"Programme 5\u00d73min"),
-          h("span",{style:"color:var(--td)"},mobOpen?"\u25B2":"\u25BC")
-        ),
-        mobOpen&&h("div",{style:"margin-top:8px;padding:10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:6px;font-size:11px;color:var(--tx);line-height:1.5"},
-          h("div",{style:"margin-bottom:10px"},
-            h("div",{style:"font-weight:700;color:"+(STAT_COLOR.Agilite||"#4ade80")},"1. Hanches & jambes \u00b7 3min"),
-            h("div",{style:"color:var(--td);font-size:10px;margin-top:3px"},
-              h("div",null,"\u2022 Cercles de hanches : 10 par sens (1min)"),
-              h("div",null,"\u2022 Leg swings avant/arri\u00e8re : 10 par jambe (1min)"),
-              h("div",null,"\u2022 Leg swings lat\u00e9raux : 10 par jambe (1min)")
-            )
-          ),
-          h("div",{style:"margin-bottom:10px"},
-            h("div",{style:"font-weight:700;color:"+(STAT_COLOR.Agilite||"#4ade80")},"2. Colonne thoracique \u00b7 3min"),
-            h("div",{style:"color:var(--td);font-size:10px;margin-top:3px"},
-              h("div",null,"\u2022 Cat-cow : 15 cycles (1min30)"),
-              h("div",null,"\u2022 Cobra-enfant altern\u00e9 : 15 cycles (1min30)")
-            )
-          ),
-          h("div",{style:"margin-bottom:10px"},
-            h("div",{style:"font-weight:700;color:"+(STAT_COLOR.Agilite||"#4ade80")},"3. \u00c9paules \u00b7 3min"),
-            h("div",{style:"color:var(--td);font-size:10px;margin-top:3px"},
-              h("div",null,"\u2022 Arm circles : 5 par sens par c\u00f4t\u00e9 (1min30)"),
-              h("div",null,"\u2022 Wall slides W \u2192 Y : 10 r\u00e9p\u00e9titions (1min30)")
-            )
-          ),
-          h("div",{style:"margin-bottom:10px"},
-            h("div",{style:"font-weight:700;color:"+(STAT_COLOR.Agilite||"#4ade80")},"4. Rotation & lat\u00e9ral \u00b7 3min"),
-            h("div",{style:"color:var(--td);font-size:10px;margin-top:3px"},
-              h("div",null,"\u2022 T-spine rotations : 8 par c\u00f4t\u00e9 (1min)"),
-              h("div",null,"\u2022 Side bends : 8 par c\u00f4t\u00e9 (1min)"),
-              h("div",null,"\u2022 World's greatest stretch : 4 par c\u00f4t\u00e9 (1min)")
-            )
-          ),
-          h("div",null,
-            h("div",{style:"font-weight:700;color:"+(STAT_COLOR.Agilite||"#4ade80")},"5. \u00c9quilibre & finition \u00b7 3min"),
-            h("div",{style:"color:var(--td);font-size:10px;margin-top:3px"},
-              h("div",null,"\u2022 \u00c9quilibre un pied yeux ferm\u00e9s : 30s par pied (1min)"),
-              h("div",null,"\u2022 Forward fold (flexion avant) respir\u00e9e : 6 respirations lentes (1min)"),
-              h("div",null,"\u2022 Ancrage debout (pieds parall\u00e8les, respirations profondes) : 1min")
-            )
-          ),
-          h("div",{style:"margin-top:12px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.05);font-size:10px;color:var(--td);font-style:italic"},
-            "Respiration nasale uniquement \u00b7 amplitude max, vitesse min"
-          )
-        )
-      )
+      })()
     );
   }
 
@@ -1378,7 +1326,8 @@ function App(){
     const vals = ep.dailyValidations||[];
     const todayValidated = vals.includes(today);
     const streakTarget = ep.streakDays || 7;
-    const pct = ep.streak7 ? Math.min(100,(vals.length/streakTarget)*100) : ep.binary ? (done?100:0) : Math.min(100,((ep.progress||0)/(ep.target||1))*100);
+    const isStreakLike = ep.streak7 || ep.cumDays;
+    const pct = isStreakLike ? Math.min(100,(vals.length/streakTarget)*100) : ep.binary ? (done?100:0) : Math.min(100,((ep.progress||0)/(ep.target||1))*100);
     const barInProgress = !done && !failed && pct > 0;
     const barStyle = done?"width:100%;background:"+tierColor:failed?"width:100%;background:#ef4444;opacity:0.4":barInProgress?"width:"+pct+"%;background:repeating-linear-gradient(45deg,"+tierColor+","+tierColor+" 4px,"+tierColor+"44 4px,"+tierColor+"44 8px)":"width:0%";
 
@@ -1387,7 +1336,7 @@ function App(){
       let newProgress = ep.progress;
       let nowComplete = false;
       if(ep.binary){ newProgress=1; nowComplete=true; }
-      else if(ep.streak7){
+      else if(isStreakLike){
         if(todayValidated) return;
         const newVals=[...vals,today];
         nowComplete = newVals.length>=streakTarget;
@@ -1446,7 +1395,7 @@ function App(){
         h("div",{class:"sqbarfill",style:barStyle})
       ),
       h("div",{style:"display:flex;justify-content:space-between;font-size:10px;color:var(--td);margin-top:4px"},
-        ep.streak7
+        isStreakLike
           ? h("span",null,vals.length+"/"+streakTarget+" jours valid\u00e9s"+(todayValidated?" \u2713":""))
           : h("span",null,(ep.binary?"":ep.progress+"/"+ep.target+" "+ep.unit)),
         !done&&!failed&&h("span",{style:"color:"+tierColor+";font-family:Orbitron,sans-serif"},"\u23F1 "+fmtCD(remaining)+" restants")
@@ -1455,7 +1404,7 @@ function App(){
       !done&&!failed&&showInput&&(
         ep.binary
           ? h("button",{onClick:()=>completeEp(1),style:"width:100%;margin-top:8px;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer;letter-spacing:1px"},"\u2713 Succ\u00e8s")
-          : ep.streak7
+          : isStreakLike
             ? h("button",{onClick:()=>completeEp(1),disabled:todayValidated,style:"width:100%;margin-top:8px;padding:10px;border-radius:8px;border:1px solid "+(todayValidated?"#4ade8055":tierColor+"55")+";background:"+(todayValidated?"#4ade8011":tierColor+"11")+";color:"+(todayValidated?"#4ade80":tierColor)+";font-family:Orbitron,sans-serif;font-size:11px;cursor:"+(todayValidated?"default":"pointer")+";letter-spacing:1px"},todayValidated?"Fait aujourd'hui \u2713":"Fait aujourd'hui \u2713")
             : ep.unit==="km"
               ? h("div",{class:"qinrow",style:"margin-top:8px"},
@@ -1476,6 +1425,59 @@ function App(){
                     h("button",{onClick:()=>completeEp(1),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+1 "+ep.unit),
                     h("button",{onClick:()=>completeEp(10),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+10 "+ep.unit)
                   )
+      ),
+      // Menu déroulant des exercices pour Mobilité matinale (épreuve)
+      ep.id==="ep_mob"&&h(Fragment,null,
+        h("div",{
+          onClick:()=>setMobOpen(v=>!v),
+          style:"display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:6px 8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;cursor:pointer;user-select:none;font-size:10px;font-family:Orbitron,sans-serif;letter-spacing:1px"
+        },
+          h("span",{style:"color:var(--td);text-transform:uppercase"},"Programme 5\u00d73min"),
+          h("span",{style:"color:var(--td)"},mobOpen?"\u25B2":"\u25BC")
+        ),
+        mobOpen&&h("div",{style:"margin-top:8px;padding:10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:6px;font-size:11px;color:var(--tx);line-height:1.5"},
+          h("div",{style:"margin-bottom:10px"},
+            h("div",{style:"font-weight:700;color:"+(STAT_COLOR.Agilite||"#4ade80")},"1. Hanches & jambes \u00b7 3min"),
+            h("div",{style:"color:var(--td);font-size:10px;margin-top:3px"},
+              h("div",null,"\u2022 Cercles de hanches : 10 par sens (1min)"),
+              h("div",null,"\u2022 Leg swings avant/arri\u00e8re : 10 par jambe (1min)"),
+              h("div",null,"\u2022 Leg swings lat\u00e9raux : 10 par jambe (1min)")
+            )
+          ),
+          h("div",{style:"margin-bottom:10px"},
+            h("div",{style:"font-weight:700;color:"+(STAT_COLOR.Agilite||"#4ade80")},"2. Colonne thoracique \u00b7 3min"),
+            h("div",{style:"color:var(--td);font-size:10px;margin-top:3px"},
+              h("div",null,"\u2022 Cat-cow : 15 cycles (1min30)"),
+              h("div",null,"\u2022 Cobra-enfant altern\u00e9 : 15 cycles (1min30)")
+            )
+          ),
+          h("div",{style:"margin-bottom:10px"},
+            h("div",{style:"font-weight:700;color:"+(STAT_COLOR.Agilite||"#4ade80")},"3. \u00c9paules \u00b7 3min"),
+            h("div",{style:"color:var(--td);font-size:10px;margin-top:3px"},
+              h("div",null,"\u2022 Arm circles : 5 par sens par c\u00f4t\u00e9 (1min30)"),
+              h("div",null,"\u2022 Wall slides W \u2192 Y : 10 r\u00e9p\u00e9titions (1min30)")
+            )
+          ),
+          h("div",{style:"margin-bottom:10px"},
+            h("div",{style:"font-weight:700;color:"+(STAT_COLOR.Agilite||"#4ade80")},"4. Rotation & lat\u00e9ral \u00b7 3min"),
+            h("div",{style:"color:var(--td);font-size:10px;margin-top:3px"},
+              h("div",null,"\u2022 T-spine rotations : 8 par c\u00f4t\u00e9 (1min)"),
+              h("div",null,"\u2022 Side bends : 8 par c\u00f4t\u00e9 (1min)"),
+              h("div",null,"\u2022 World's greatest stretch : 4 par c\u00f4t\u00e9 (1min)")
+            )
+          ),
+          h("div",null,
+            h("div",{style:"font-weight:700;color:"+(STAT_COLOR.Agilite||"#4ade80")},"5. \u00c9quilibre & finition \u00b7 3min"),
+            h("div",{style:"color:var(--td);font-size:10px;margin-top:3px"},
+              h("div",null,"\u2022 \u00c9quilibre un pied yeux ferm\u00e9s : 30s par pied (1min)"),
+              h("div",null,"\u2022 Forward fold (flexion avant) respir\u00e9e : 6 respirations lentes (1min)"),
+              h("div",null,"\u2022 Ancrage debout (pieds parall\u00e8les, respirations profondes) : 1min")
+            )
+          ),
+          h("div",{style:"margin-top:12px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.05);font-size:10px;color:var(--td);font-style:italic"},
+            "Respiration nasale uniquement \u00b7 amplitude max, vitesse min"
+          )
+        )
       )
     );
   }
