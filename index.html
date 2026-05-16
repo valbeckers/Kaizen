@@ -197,7 +197,7 @@ const STAT_LBL   = {Sante:"Sant\u00e9",Force:"Force",Intelligence:"Intelligence"
 
 const DEFS = [
   // ─── SANTÉ ────────────────────────────────────────────────────────────
-  {id:"water",  name:"Hydratation",     unit:"verre", xpPer:10,  daily:true, weekly:false,optional:false,stat:"Sante",         icon:"\uD83D\uDCA7",               base:10},
+  {id:"water",  name:"Hydratation",     unit:"verre", xpPer:10,  daily:true, weekly:false,optional:false,stat:"Sante",         icon:"\uD83D\uDCA7",               base:10, baseHistory:[{until:"2026-04-29",base:8}]},
   {id:"sleep",  name:"8h de sommeil",   unit:"nuit",  xpPer:0,   daily:true, weekly:false,optional:false,stat:"Sante",         icon:"\uD83D\uDECF\uFE0F",         base:1,  binary:true, binaryXp:200},
   {id:"nosugar",name:"Pas de sucres transform\u00e9s", unit:"jour", xpPer:0, daily:true, weekly:false,optional:true, stat:"Sante", icon:"\uD83C\uDF4E",            base:1,  binary:true, binaryXp:200},
   {id:"protein",name:"Barre + fruit",   unit:"repas", xpPer:0,   daily:true, weekly:false,optional:true, stat:"Sante",         icon:"\uD83C\uDF4C",               base:1,  binary:true, binaryXp:200, startDate:"2026-04-20"},
@@ -704,6 +704,15 @@ function App(){
   const reqDailyObjs  = objs.filter(o=>!o.optional&&o.daily);
   // Quêtes actives pour un jour donné (exclut les quêtes ajoutées après ce jour)
   const activeOn = (day) => reqDailyObjs.filter(o=>!o.startDate||o.startDate<=day);
+  // Base applicable pour un jour donné (gère baseHistory pour les changements rétroactifs)
+  const getBaseForDay = (obj,day) => {
+    if(!obj.baseHistory||!day) return obj.base;
+    // On cherche le premier "until" >= day (l'historique est trié par date croissante)
+    for(const h of obj.baseHistory){
+      if(day<=h.until) return h.base;
+    }
+    return obj.base;
+  };
 
   // 7b. Système de dette
   const yesterday = (()=>{ const d=new Date(today); d.setDate(d.getDate()-1); return d.toISOString().slice(0,10); })();
@@ -788,7 +797,7 @@ function App(){
     for(let i=0;i<365;i++){
       const dk=d.toISOString().slice(0,10);
       const log=state.dailyLog[dk]||{};
-      if(!activeOn(dk).every(o=>(log[o.id]||0)>=o.base))break;
+      if(!activeOn(dk).every(o=>(log[o.id]||0)>=getBaseForDay(o,dk)))break;
       streak++; d.setDate(d.getDate()-1);
     }
     // Si aujourd'hui est incomplet, le streak "en cours" = streak des jours passés
@@ -797,7 +806,7 @@ function App(){
     const yesterday=new Date(today);yesterday.setDate(yesterday.getDate()-1);
     const yk=yesterday.toISOString().slice(0,10);
     const yesterdayLog=state.dailyLog[yk]||{};
-    const yesterdayDone=activeOn(yk).every(o=>(yesterdayLog[o.id]||0)>=o.base);
+    const yesterdayDone=activeOn(yk).every(o=>(yesterdayLog[o.id]||0)>=getBaseForDay(o,yk));
     // Si hier était complet, on affiche au moins le streak sauvegardé
     if(yesterdayDone && streak===0) return state.streak;
     return streak;
@@ -1913,7 +1922,7 @@ function App(){
           const isToday=d===today;
           const allDone=isToday
             ?reqDailyObjs.every(o=>(log[o.id]||0)>=getTarget(o.base))
-            :!isFuture&&activeOn(d).every(o=>(log[o.id]||0)>0);
+            :!isFuture&&activeOn(d).every(o=>(log[o.id]||0)>=getBaseForDay(o,d));
           const isPast=d<today;
           const border=isFuture?"1px dashed #ffffff10":allDone?"2px solid #4ade80":isPast&&xp>0?"2px solid #ef4444":isToday?"1px solid "+rank.color:"1px solid #ffffff18";
           const shadow=allDone?"0 0 6px #4ade8066":isPast&&xp>0?"0 0 6px #ef444466":"";
