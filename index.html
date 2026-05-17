@@ -216,9 +216,8 @@ const DEFS = [
   {id:"run",    name:"Course",          unit:"km",    xpPer:100, daily:false,weekly:true, optional:false,stat:"Endurance",      icon:"\uD83C\uDFC3\uD83C\uDFFB",   base:7,  stat2:"Agilite", xpPer2:20},
   {id:"walk",   name:"Marche",          unit:"km",    xpPer:50,  daily:false,weekly:false,optional:true, stat:"Endurance",      icon:"\uD83D\uDEB6\uD83C\uDFFB\u200D\u2642\uFE0F", base:5, fixedBase:true, bonusHidden:true},
   // ─── AGILITÉ ──────────────────────────────────────────────────────────
-  {id:"flex",   name:"Souplesse",       unit:"min",   xpPer:30,  daily:true, weekly:false,optional:true, stat:"Agilite",        icon:"\uD83E\uDD38\uD83C\uDFFB",   base:15, fixedBase:true},
+  {id:"flex",   name:"Souplesse",       unit:"min",   xpPer:50,  daily:true, weekly:false,optional:true, stat:"Agilite",        icon:"\uD83E\uDD38\uD83C\uDFFB",   base:15, fixedBase:true},
   {id:"balance",name:"\u00c9quilibre sur un pied",unit:"min",xpPer:10,daily:true,weekly:false,optional:false,stat:"Agilite",    icon:"\uD83E\uDDB6\uD83C\uDFFB",   base:5, startDate:"2026-05-15"},
-  {id:"flow",   name:"Animal flow",     unit:"min",   xpPer:15,  daily:true, weekly:false,optional:true, stat:"Agilite",        icon:"\uD83D\uDC0A",               base:10, fixedBase:true, bonusHidden:true},
   // ─── DISCIPLINE ───────────────────────────────────────────────────────
   {id:"nophone",name:"T\u00e9l\u00e9phone hors de port\u00e9e 3h",unit:"jour",xpPer:0,daily:true,weekly:false,optional:true,stat:"Discipline",icon:"\uD83D\uDCF5", base:1, binary:true, binaryXp:200, bonusHidden:true},
 ];
@@ -253,7 +252,7 @@ const SP = {
     {id:"sp_walk30",  name:"30min de marche",     icon:"\uD83D\uDEB6\uD83C\uDFFB\u200D\u2642\uFE0F",           unit:"min",  target:30, xp:250, days:1, desc:"30 min de marche"},
   ],
   Agilite:[
-    {id:"sp_flow20",  name:"20min d'animal flow", icon:"\uD83D\uDC0A",                                         unit:"min",  target:20, xp:500, days:1, desc:"20 min d'animal flow"},
+    {id:"sp_flow20",  name:"20min d'animal flow", icon:"\uD83D\uDC0A",                                         unit:"min",  target:20, xp:1000, days:1, tiers:[{at:10,xp:500,stat:"Agilite"},{at:20,xp:500,stat:"Agilite"}], desc:"20 min d'animal flow (palier \u00e0 10min)"},
     {id:"sp_flex30",  name:"30min de souplesse",  icon:"\uD83E\uDD38\uD83C\uDFFB",                             unit:"jour", target:1,  xp:500, days:1, binary:true, desc:"30 min de souplesse"},
   ],
   Discipline:[
@@ -385,7 +384,6 @@ const RANK_BASES = {
   med:     [15, 18, 21,  24,  27,  30],
   flex:    [15, 18, 21,  24,  27,  30],
   balance: [5,  10, 15,  20,  25,  30],
-  flow:    [15, 18, 21,  24,  27,  30],
   grips:   [10, 12, 14,  16,  18,  20],
 };
 
@@ -1130,7 +1128,41 @@ function App(){
     const newProg=Math.min(sq.target,sq.progress+val);
     const wasComplete=sq.progress>=sq.target;
     const nowComplete=newProg>=sq.target;
-    // XP uniquement à la complétion totale
+
+    // Si la quête a des paliers intermédiaires (tiers), on distribue le XP palier par palier
+    if(sq.tiers&&sq.tiers.length>0){
+      const crossedTiers = sq.tiers.filter(t=>sq.progress<t.at&&newProg>=t.at);
+      if(crossedTiers.length>0){
+        // Cumuler le XP par stat pour l'affichage
+        const xpByStat = {};
+        crossedTiers.forEach(t=>{
+          addXp(t.xp,t.stat,null,true);
+          xpByStat[t.stat]=(xpByStat[t.stat]||0)+t.xp;
+          // xp2/stat2 du palier optionnel
+          if(t.xp2&&t.stat2){
+            addXp(t.xp2,t.stat2,null,true);
+            xpByStat[t.stat2]=(xpByStat[t.stat2]||0)+t.xp2;
+          }
+        });
+        const id1=Date.now()+Math.random();
+        const id2=id1+0.1;
+        const xpText = Object.entries(xpByStat).map(([stat,xp])=>{
+          const lbl = STAT_LBL2[stat] || STAT_LBL[stat] || stat || "";
+          return "+"+xp+" XP"+(lbl?" "+lbl:"");
+        }).join("\n");
+        const headerTxt = nowComplete ? "\uD83C\uDFC6 QU\u00c9TE VALID\u00c9E !" : "\u2728 PALIER FRANCHI !";
+        setFloats(f=>[...f,
+          {id:id1,y:"35%",txt:headerTxt},
+          {id:id2,y:"40%",txt:xpText}
+        ]);
+        setTimeout(()=>setFloats(f=>f.filter(p=>p.id!==id1&&p.id!==id2)),1400);
+      }
+      setState(s=>({...s,specialQuests:s.specialQuests.map(q=>q.sqid===sq.sqid?{...q,progress:newProg,completedAt:(nowComplete&&!wasComplete)?Date.now():q.completedAt}:q),
+        sqCooldownUntil:(nowComplete&&!wasComplete)?next7AM():(s.sqCooldownUntil||null)}));
+      return;
+    }
+
+    // Comportement standard : XP uniquement à la complétion totale
     if(!wasComplete&&nowComplete){
       const xpPairs = [
         {xp:sq.xp, stat:sq.stat},
@@ -1258,9 +1290,9 @@ function App(){
           )
       ),
       (()=>{
-        const QUICK_IDS=["push","abs","squats","calves","reading","flex","balance","flow","grips","med","water","mob"];
-        const unitLabel={push:"rep",abs:"rep",squats:"rep",calves:"rep",reading:"page",flex:"min",balance:"min",flow:"min",grips:"min",med:"min",water:"verre",mob:"min"};
-        const unitLabelPlural={push:"reps",abs:"reps",squats:"reps",calves:"reps",reading:"pages",flex:"min",balance:"min",flow:"min",grips:"min",med:"min",water:"verres",mob:"min"};
+        const QUICK_IDS=["push","abs","squats","calves","reading","flex","balance","grips","med","water","mob"];
+        const unitLabel={push:"rep",abs:"rep",squats:"rep",calves:"rep",reading:"page",flex:"min",balance:"min",grips:"min",med:"min",water:"verre",mob:"min"};
+        const unitLabelPlural={push:"reps",abs:"reps",squats:"reps",calves:"reps",reading:"pages",flex:"min",balance:"min",grips:"min",med:"min",water:"verres",mob:"min"};
         if(QUICK_IDS.includes(obj.id)){
           const lbl=unitLabel[obj.id]||obj.unit;
           const lblPl=unitLabelPlural[obj.id]||obj.unit;
