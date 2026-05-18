@@ -259,9 +259,9 @@ const SP = {
   Agilite:[
     {id:"sp_flow20",  name:"20min d'animal flow", icon:"\uD83D\uDC0A",                                         unit:"min",  target:20, xp:1000, days:1, tiers:[{at:10,xp:500,stat:"Agilite"},{at:20,xp:500,stat:"Agilite"}], desc:"20 min d'animal flow (palier \u00e0 10min)"},
     {id:"sp_flex30",  name:"30min de souplesse",  icon:"\uD83E\uDD38\uD83C\uDFFB",                             unit:"jour", target:1,  xp:500, days:1, binary:true, desc:"30 min de souplesse"},
-    {id:"sp_fluide",  name:"15min d'encha\u00eenement fluide", icon:"\uD83C\uDF0A",                              unit:"min",  target:15, xp:375, days:1, desc:"Capoeira flow / mouvement continu sans rupture"},
-    {id:"sp_silent",  name:"15min de d\u00e9placements silencieux", icon:"\uD83D\uDC08",                          unit:"min",  target:15, xp:375, days:1, desc:"Marcher sans bruit (escaliers, pi\u00e8ces)"},
-    {id:"sp_balance_eyes", name:"20min d'\u00e9quilibre yeux ferm\u00e9s", icon:"\uD83E\uDDB6\uD83C\uDFFB",          unit:"min",  target:20, xp:400, xp2:100, stat2:"Concentration", days:1, desc:"\u00c9quilibre sur un pied yeux ferm\u00e9s"},
+    {id:"sp_fluide",  name:"15min de flow martial", icon:"\uD83C\uDF0A",                              unit:"min",  target:15, xp:375, days:1, desc:"Capoeira flow / mouvement continu sans rupture"},
+    {id:"sp_silent",  name:"10min de d\u00e9placements silencieux", icon:"\uD83D\uDC08",                          unit:"min",  target:10, xp:250, days:1, desc:"Marcher sans bruit (escaliers, pi\u00e8ces)"},
+    {id:"sp_balance_eyes", name:"10min d'\u00e9quilibre yeux ferm\u00e9s", icon:"\uD83E\uDDB6\uD83C\uDFFB",          unit:"min",  target:10, xp:200, xp2:50, stat2:"Concentration", days:1, desc:"\u00c9quilibre sur un pied yeux ferm\u00e9s"},
   ],
   Discipline:[
     {id:"sp_cold",      name:"10min douche froide",             icon:"\uD83D\uDEBF",                          unit:"jour", target:1, xp:250, days:1, binary:true, desc:"10 min d'eau froide"},
@@ -308,8 +308,8 @@ const EPREUVES = [
     desc:"Nettoyer compl\u00e8tement une pi\u00e8ce"},
   {id:"ep_mob",      name:"Mobilit\u00e9 matinale",             icon:"\uD83E\uDD38\uD83C\uDFFB\u200D\u2642\uFE0F",stat:"Agilite",     xp:2500, days:7, cumDays:true, streakDays:5, unit:"jour", target:5,
     desc:"Faire 15 min de mobilit\u00e9 5 jours sur 7"},
-  {id:"ep_taichi",   name:"1h de Tai Chi",                      icon:"\u262F\uFE0F",                             stat:"Agilite",      xp:800, xp2:200, stat2:"Concentration", days:7, unit:"min", target:60,
-    desc:"60 minutes cumul\u00e9es de Tai Chi sur la semaine"},
+  {id:"ep_taichi",   name:"Tai Chi quotidien",                  icon:"\u262F\uFE0F",                             stat:"Agilite",      xp:800, xp2:200, stat2:"Concentration", days:7, cumDays:true, streakDays:5, dailyMin:20, unit:"jour", target:5,
+    desc:"Faire 20 min de Tai Chi 5 jours sur 7"},
 ];
 
 // Spawn programmé : prochain lundi à 7h00 local (à partir de "from", défaut now)
@@ -1471,6 +1471,9 @@ function App(){
     const todayValidated = vals.includes(today);
     const streakTarget = ep.streakDays || 7;
     const isStreakLike = ep.streak7 || ep.cumDays;
+    const hasDailyMin = !!ep.dailyMin;
+    const dailyMinutes = ep.dailyMinutes || {};
+    const todayMin = dailyMinutes[today] || 0;
     const pct = isStreakLike ? Math.min(100,(vals.length/streakTarget)*100) : ep.binary ? (done?100:0) : Math.min(100,((ep.progress||0)/(ep.target||1))*100);
     const barInProgress = !done && !failed && pct > 0;
     const barStyle = done?"width:100%;background:"+tierColor:failed?"width:100%;background:#ef4444;opacity:0.4":barInProgress?"width:"+pct+"%;background:repeating-linear-gradient(45deg,"+tierColor+","+tierColor+" 4px,"+tierColor+"44 4px,"+tierColor+"44 8px)":"width:0%";
@@ -1480,6 +1483,22 @@ function App(){
       let newProgress = ep.progress;
       let nowComplete = false;
       if(ep.binary){ newProgress=1; nowComplete=true; }
+      else if(hasDailyMin){
+        // cumDays + dailyMin : on track les minutes par jour, un jour est validé à dailyMin atteint
+        const addMin = val || 0;
+        if(addMin<=0) return;
+        const newDailyMin = todayMin + addMin;
+        const newDailyMinutes = {...dailyMinutes, [today]: newDailyMin};
+        let newVals = [...vals];
+        // Si on franchit le seuil quotidien et que ce jour n'est pas encore validé
+        if(todayMin < ep.dailyMin && newDailyMin >= ep.dailyMin && !todayValidated){
+          newVals = [...vals, today];
+        }
+        nowComplete = newVals.length >= streakTarget;
+        setState(s=>({...s, epreuves:s.epreuves.map(e=>e.epid===ep.epid?{...e,dailyMinutes:newDailyMinutes,dailyValidations:newVals,completedAt:nowComplete?Date.now():null}:e)}));
+        if(nowComplete){ grantEpXp(ep); }
+        return;
+      }
       else if(isStreakLike){
         if(todayValidated) return;
         const newVals=[...vals,today];
@@ -1539,36 +1558,43 @@ function App(){
         h("div",{class:"sqbarfill",style:barStyle})
       ),
       h("div",{style:"display:flex;justify-content:space-between;font-size:10px;color:var(--td);margin-top:4px"},
-        isStreakLike
-          ? h("span",null,vals.length+"/"+streakTarget+" jours valid\u00e9s"+(todayValidated?" \u2713":""))
-          : h("span",null,(ep.binary?"":ep.progress+"/"+ep.target+" "+ep.unit)),
+        hasDailyMin
+          ? h("span",null,vals.length+"/"+streakTarget+" jours valid\u00e9s \u00b7 aujourd'hui : "+todayMin+"/"+ep.dailyMin+" min"+(todayValidated?" \u2713":""))
+          : isStreakLike
+            ? h("span",null,vals.length+"/"+streakTarget+" jours valid\u00e9s"+(todayValidated?" \u2713":""))
+            : h("span",null,(ep.binary?"":ep.progress+"/"+ep.target+" "+ep.unit)),
         !done&&!failed&&h("span",{style:"color:"+tierColor+";font-family:Orbitron,sans-serif"},"\u23F1 "+fmtCD(remaining)+" restants")
       ),
       // Boutons action
       !done&&!failed&&showInput&&(
         ep.binary
           ? h("button",{onClick:()=>completeEp(1),style:"width:100%;margin-top:8px;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer;letter-spacing:1px"},"\u2713 Succ\u00e8s")
-          : isStreakLike
-            ? h("button",{onClick:()=>completeEp(1),disabled:todayValidated,style:"width:100%;margin-top:8px;padding:10px;border-radius:8px;border:1px solid "+(todayValidated?"#4ade8055":tierColor+"55")+";background:"+(todayValidated?"#4ade8011":tierColor+"11")+";color:"+(todayValidated?"#4ade80":tierColor)+";font-family:Orbitron,sans-serif;font-size:11px;cursor:"+(todayValidated?"default":"pointer")+";letter-spacing:1px"},todayValidated?"Fait aujourd'hui \u2713":"Fait aujourd'hui \u2713")
-            : ep.unit==="km"
-              ? h("div",{class:"qinrow",style:"margin-top:8px"},
-                  h("input",{id:"epi_"+ep.epid,class:"qin",type:"text",inputMode:"decimal",placeholder:"+ km",style:"border-color:"+tierColor+"55"}),
-                  h("button",{class:"qbtn",style:"border-color:"+tierColor+"55;color:"+tierColor,onClick:()=>{
-                    const el=document.getElementById("epi_"+ep.epid); if(!el)return;
-                    const raw=el.value.toString().replace(",","."); el.value="";
-                    const v=parseFloat(raw); if(!v||v<=0)return;
-                    completeEp(v);
-                  }},"+XP")
-                )
-              : ep.id==="ep_project" || ep.id==="ep_taichi"
-                ? h("div",{style:"display:flex;gap:8px;margin-top:8px"},
-                    h("button",{onClick:()=>completeEp(10),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+10 min"),
-                    h("button",{onClick:()=>completeEp(60),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+1 h")
+          : hasDailyMin
+            ? h("div",{style:"display:flex;gap:8px;margin-top:8px"},
+                h("button",{onClick:()=>completeEp(10),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+10 min"),
+                h("button",{onClick:()=>completeEp(20),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+20 min")
+              )
+            : isStreakLike
+              ? h("button",{onClick:()=>completeEp(1),disabled:todayValidated,style:"width:100%;margin-top:8px;padding:10px;border-radius:8px;border:1px solid "+(todayValidated?"#4ade8055":tierColor+"55")+";background:"+(todayValidated?"#4ade8011":tierColor+"11")+";color:"+(todayValidated?"#4ade80":tierColor)+";font-family:Orbitron,sans-serif;font-size:11px;cursor:"+(todayValidated?"default":"pointer")+";letter-spacing:1px"},todayValidated?"Fait aujourd'hui \u2713":"Fait aujourd'hui \u2713")
+              : ep.unit==="km"
+                ? h("div",{class:"qinrow",style:"margin-top:8px"},
+                    h("input",{id:"epi_"+ep.epid,class:"qin",type:"text",inputMode:"decimal",placeholder:"+ km",style:"border-color:"+tierColor+"55"}),
+                    h("button",{class:"qbtn",style:"border-color:"+tierColor+"55;color:"+tierColor,onClick:()=>{
+                      const el=document.getElementById("epi_"+ep.epid); if(!el)return;
+                      const raw=el.value.toString().replace(",","."); el.value="";
+                      const v=parseFloat(raw); if(!v||v<=0)return;
+                      completeEp(v);
+                    }},"+XP")
                   )
-                : h("div",{style:"display:flex;gap:8px;margin-top:8px"},
-                    h("button",{onClick:()=>completeEp(1),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+1 "+ep.unit),
-                    h("button",{onClick:()=>completeEp(10),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+10 "+ep.unit)
-                  )
+                : ep.id==="ep_project"
+                  ? h("div",{style:"display:flex;gap:8px;margin-top:8px"},
+                      h("button",{onClick:()=>completeEp(10),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+10 min"),
+                      h("button",{onClick:()=>completeEp(60),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+1 h")
+                    )
+                  : h("div",{style:"display:flex;gap:8px;margin-top:8px"},
+                      h("button",{onClick:()=>completeEp(1),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+1 "+ep.unit),
+                      h("button",{onClick:()=>completeEp(10),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+10 "+ep.unit)
+                    )
       ),
       // Menu déroulant des exercices pour Mobilité matinale (épreuve)
       ep.id==="ep_mob"&&h(Fragment,null,
