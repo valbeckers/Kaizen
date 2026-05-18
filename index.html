@@ -218,6 +218,7 @@ const DEFS = [
   {id:"walk",   name:"Marche",          unit:"km",    xpPer:50,  daily:false,weekly:false,optional:true, stat:"Endurance",      icon:"\uD83D\uDEB6\uD83C\uDFFB\u200D\u2642\uFE0F", base:5, fixedBase:true, bonusHidden:true},
   // ─── AGILITÉ ──────────────────────────────────────────────────────────
   {id:"flex",   name:"Souplesse",       unit:"min",   xpPer:50,  daily:true, weekly:false,optional:true, stat:"Agilite",        icon:"\uD83E\uDD38\uD83C\uDFFB",   base:15, fixedBase:true, cap:2},
+  {id:"footwork",name:"Footwork rapide",unit:"min",  xpPer:15,  daily:true, weekly:false,optional:true, stat:"Agilite",        icon:"\u26A1",                     base:15, fixedBase:true, cap:2},
   {id:"balance",name:"\u00c9quilibre sur un pied",unit:"min",xpPer:10,daily:true,weekly:false,optional:false,stat:"Agilite",    icon:"\uD83E\uDDB6\uD83C\uDFFB",   base:5, startDate:"2026-05-15", cap:3},
   // ─── DISCIPLINE ───────────────────────────────────────────────────────
   {id:"nophone",name:"T\u00e9l\u00e9phone hors de port\u00e9e 3h",unit:"jour",xpPer:0,daily:true,weekly:false,optional:true,stat:"Discipline",icon:"\uD83D\uDCF5", base:1, binary:true, binaryXp:200, bonusHidden:true},
@@ -258,6 +259,9 @@ const SP = {
   Agilite:[
     {id:"sp_flow20",  name:"20min d'animal flow", icon:"\uD83D\uDC0A",                                         unit:"min",  target:20, xp:1000, days:1, tiers:[{at:10,xp:500,stat:"Agilite"},{at:20,xp:500,stat:"Agilite"}], desc:"20 min d'animal flow (palier \u00e0 10min)"},
     {id:"sp_flex30",  name:"30min de souplesse",  icon:"\uD83E\uDD38\uD83C\uDFFB",                             unit:"jour", target:1,  xp:500, days:1, binary:true, desc:"30 min de souplesse"},
+    {id:"sp_fluide",  name:"15min d'encha\u00eenement fluide", icon:"\uD83C\uDF0A",                              unit:"min",  target:15, xp:375, days:1, desc:"Capoeira flow / mouvement continu sans rupture"},
+    {id:"sp_silent",  name:"15min de d\u00e9placements silencieux", icon:"\uD83D\uDC08",                          unit:"min",  target:15, xp:375, days:1, desc:"Marcher sans bruit (escaliers, pi\u00e8ces)"},
+    {id:"sp_balance_eyes", name:"20min d'\u00e9quilibre yeux ferm\u00e9s", icon:"\uD83E\uDDB6\uD83C\uDFFB",          unit:"min",  target:20, xp:400, xp2:100, stat2:"Concentration", days:1, desc:"\u00c9quilibre sur un pied yeux ferm\u00e9s"},
   ],
   Discipline:[
     {id:"sp_cold",      name:"10min douche froide",             icon:"\uD83D\uDEBF",                          unit:"jour", target:1, xp:250, days:1, binary:true, desc:"10 min d'eau froide"},
@@ -304,6 +308,8 @@ const EPREUVES = [
     desc:"Nettoyer compl\u00e8tement une pi\u00e8ce"},
   {id:"ep_mob",      name:"Mobilit\u00e9 matinale",             icon:"\uD83E\uDD38\uD83C\uDFFB\u200D\u2642\uFE0F",stat:"Agilite",     xp:2500, days:7, cumDays:true, streakDays:5, unit:"jour", target:5,
     desc:"Faire 15 min de mobilit\u00e9 5 jours sur 7"},
+  {id:"ep_taichi",   name:"1h de Tai Chi",                      icon:"\u262F\uFE0F",                             stat:"Agilite",      xp:800, xp2:200, stat2:"Concentration", days:7, unit:"min", target:60,
+    desc:"60 minutes cumul\u00e9es de Tai Chi sur la semaine"},
 ];
 
 // Spawn programmé : prochain lundi à 7h00 local (à partir de "from", défaut now)
@@ -1377,9 +1383,9 @@ function App(){
       isNearCap&&h("div",{style:"font-size:9px;color:"+capColor+";font-family:Orbitron,sans-serif;text-align:center;margin-top:4px;letter-spacing:0.5px;opacity:0.85"},"\u26A0 Cap dans "+remainingToCap+" "+obj.unit+(remainingToCap>1?"s":"")+" \u00b7 r\u00e9cup\u00e9ration forc\u00e9e"),
       isCapped&&h("div",{style:"font-size:9px;color:"+capColor+";font-family:Orbitron,sans-serif;text-align:center;margin-top:4px;letter-spacing:0.5px;font-style:italic"},"\uD83D\uDCA4 R\u00e9cup\u00e9ration forc\u00e9e jusqu'\u00e0 "+(obj.weekly?"la semaine prochaine":"demain")),
       (()=>{
-        const QUICK_IDS=["push","abs","squats","calves","reading","flex","balance","grips","med","water","mob"];
-        const unitLabel={push:"rep",abs:"rep",squats:"rep",calves:"rep",reading:"page",flex:"min",balance:"min",grips:"min",med:"min",water:"verre",mob:"min"};
-        const unitLabelPlural={push:"reps",abs:"reps",squats:"reps",calves:"reps",reading:"pages",flex:"min",balance:"min",grips:"min",med:"min",water:"verres",mob:"min"};
+        const QUICK_IDS=["push","abs","squats","calves","reading","flex","balance","grips","med","water","mob","footwork"];
+        const unitLabel={push:"rep",abs:"rep",squats:"rep",calves:"rep",reading:"page",flex:"min",balance:"min",grips:"min",med:"min",water:"verre",mob:"min",footwork:"min"};
+        const unitLabelPlural={push:"reps",abs:"reps",squats:"reps",calves:"reps",reading:"pages",flex:"min",balance:"min",grips:"min",med:"min",water:"verres",mob:"min",footwork:"min"};
         if(QUICK_IDS.includes(obj.id)){
           const lbl=unitLabel[obj.id]||obj.unit;
           const lblPl=unitLabelPlural[obj.id]||obj.unit;
@@ -1554,7 +1560,7 @@ function App(){
                     completeEp(v);
                   }},"+XP")
                 )
-              : ep.id==="ep_project"
+              : ep.id==="ep_project" || ep.id==="ep_taichi"
                 ? h("div",{style:"display:flex;gap:8px;margin-top:8px"},
                     h("button",{onClick:()=>completeEp(10),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+10 min"),
                     h("button",{onClick:()=>completeEp(60),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+1 h")
