@@ -817,24 +817,21 @@ if(sleepDebtMed > 0 && (tLog["med"]||0) < sleepDebtMed) return false;
 return true;
 })();
 
-// 8. Streak : calculé depuis dailyLog mais ne descend jamais sous le streak sauvegardé si hier était complet
+// 8. Streak : on remonte à partir d'hier (aujourd'hui peut être incomplet sans casser le streak)
 const computedStreak = (()=>{
-let streak=0, d=new Date(today);
+let streak=0;
+const d=new Date(today);
+d.setDate(d.getDate()-1); // on commence par hier
 for(let i=0;i<365;i++){
 const dk=d.toISOString().slice(0,10);
 const log=state.dailyLog[dk]||{};
 if(!activeOn(dk).every(o=>(log[o.id]||0)>=getBaseForDay(o,dk)))break;
 streak++; d.setDate(d.getDate()-1);
 }
-// Si aujourd'hui est incomplet, le streak "en cours" = streak des jours passés
-// On prend le max entre ce qui est calculé et le streak sauvegardé
-// pour éviter de perdre le streak affiché pendant la journée
-const yesterday=new Date(today);yesterday.setDate(yesterday.getDate()-1);
-const yk=yesterday.toISOString().slice(0,10);
-const yesterdayLog=state.dailyLog[yk]||{};
-const yesterdayDone=activeOn(yk).every(o=>(yesterdayLog[o.id]||0)>=getBaseForDay(o,yk));
-// Si hier était complet, on affiche au moins le streak sauvegardé
-if(yesterdayDone && streak===0) return state.streak;
+// Si aujourd'hui est complet, on l'ajoute au streak
+const todayLog=state.dailyLog[today]||{};
+const todayDone=activeOn(today).every(o=>(todayLog[o.id]||0)>=getEffectiveTarget(o.id));
+if(todayDone) streak++;
 return streak;
 })();
 
