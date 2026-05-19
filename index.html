@@ -152,11 +152,11 @@ const { useState, useEffect, useRef } = preactHooks;
 
 const RANKS = [
 {id:"E",label:"\u00c9veill\u00e9", color:"#9ca3af",glow:"#9ca3af11",bg:"#0f0f12",accent:"#6b7280",xpRequired:0},
-{id:"D",label:"Disciple", color:"#8b82c4",glow:"#8b82c422",bg:"#0f0e14",accent:"#7068b0",xpRequired:60000},
-{id:"C",label:"Catalyseur", color:"#9070d4",glow:"#9070d433",bg:"#100e18",accent:"#7858c0",xpRequired:180000},
-{id:"B",label:"B\u00e2tisseur", color:"#8a5fd8",glow:"#8a5fd855",bg:"#0e0c1c",accent:"#7248c4",xpRequired:420000},
-{id:"A",label:"Ascendant", color:"#9040e8",glow:"#9040e877",bg:"#0c0a1e",accent:"#7828d0",xpRequired:900000},
-{id:"S",label:"Souverain", color:"#8b2fff",glow:"#8b2fff99",bg:"#0a0820",accent:"#6d10f0",xpRequired:1860000},
+{id:"D",label:"Disciple", color:"#8b82c4",glow:"#8b82c422",bg:"#0f0e14",accent:"#7068b0",xpRequired:120000},
+{id:"C",label:"Catalyseur", color:"#9070d4",glow:"#9070d433",bg:"#100e18",accent:"#7858c0",xpRequired:360000},
+{id:"B",label:"B\u00e2tisseur", color:"#8a5fd8",glow:"#8a5fd855",bg:"#0e0c1c",accent:"#7248c4",xpRequired:840000},
+{id:"A",label:"Ascendant", color:"#9040e8",glow:"#9040e877",bg:"#0c0a1e",accent:"#7828d0",xpRequired:1800000},
+{id:"S",label:"Souverain", color:"#8b2fff",glow:"#8b2fff99",bg:"#0a0820",accent:"#6d10f0",xpRequired:3720000},
 ];
 
 // Conditions de stats pour débloquer chaque palier (rang ou ascension)
@@ -396,8 +396,8 @@ grips: [10, 12, 14, 16, 18, 20],
 // XP cumulé requis pour atteindre l'Ascension N (1..10)
 // Pattern : base S→Asc1 = 1 152 000, puis ×1.2 à chaque saut
 function getAscensionXpRequired(prestigeLevel){
-const S_XP = 1860000; // xpRequired du rang S
-const BASE_JUMP = 1152000; // XP du saut S → Ascension 1
+const S_XP = 3720000; // xpRequired du rang S
+const BASE_JUMP = 2304000; // XP du saut S → Ascension 1
 let cum = S_XP;
 let jump = BASE_JUMP;
 for(let i=1;i<=prestigeLevel;i++){
