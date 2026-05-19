@@ -202,9 +202,9 @@ const DEFS = [
 {id:"nosugar",name:"Pas de sucres transform\u00e9s", unit:"jour", xpPer:0, daily:true, weekly:false,optional:true, stat:"Sante", icon:"\uD83C\uDF4E", base:1, binary:true, binaryXp:200},
 {id:"protein",name:"Barre + fruit", unit:"repas", xpPer:0, daily:true, weekly:false,optional:true, stat:"Sante", icon:"\uD83C\uDF4C", base:1, binary:true, binaryXp:200, startDate:"2026-04-20"},
 // ─── FORCE ────────────────────────────────────────────────────────────
-{id:"push", name:"Pompes", unit:"rep", xpPer:2, daily:true, weekly:false,optional:false,stat:"Force", icon:"\uD83E\uDDBE", base:30, cap:4},
-{id:"abs", name:"Abdominaux", unit:"rep", xpPer:1, daily:true, weekly:false,optional:false,stat:"Force", icon:"\uD83E\uDDCE\uD83C\uDFFB\u200D\u2642\uFE0F", base:60, cap:4},
-{id:"squats", name:"Squats", unit:"rep", xpPer:3, daily:true, weekly:false,optional:false,stat:"Force", icon:"\uD83E\uDDBF", base:15, stat2:"Agilite", xpPer2:1, cap:4},
+{id:"push", name:"Pompes", unit:"rep", xpPer:2, daily:true, weekly:false,optional:false,stat:"Force", icon:"\uD83E\uDDBE", base:30, cap:3},
+{id:"abs", name:"Abdominaux", unit:"rep", xpPer:1, daily:true, weekly:false,optional:false,stat:"Force", icon:"\uD83E\uDDCE\uD83C\uDFFB\u200D\u2642\uFE0F", base:60, cap:3},
+{id:"squats", name:"Squats", unit:"rep", xpPer:3, daily:true, weekly:false,optional:false,stat:"Force", icon:"\uD83E\uDDBF", base:15, stat2:"Agilite", xpPer2:1, cap:3},
 {id:"calves", name:"Extensions mollets",unit:"rep", xpPer:1, daily:true, weekly:false,optional:true, stat:"Force", icon:"\uD83E\uDDBF", base:30, stat2:"Agilite", xpPer2:1, cap:3},
 {id:"grips", name:"Hand grips", unit:"min", xpPer:10, daily:true, weekly:false,optional:true, stat:"Force", icon:"\u270A\uD83C\uDFFB", base:10, fixedBase:true, cap:3},
 // ─── INTELLIGENCE ─────────────────────────────────────────────────────
@@ -213,7 +213,7 @@ const DEFS = [
 {id:"memo", name:"M\u00e9morisation", unit:"min", xpPer:15, daily:true, weekly:false,optional:true, stat:"Concentration", icon:"\uD83E\uDDE0", base:15, fixedBase:true, bonusHidden:true},
 {id:"med", name:"M\u00e9ditation", unit:"min", xpPer:15, daily:true, weekly:false,optional:true, stat:"Concentration", icon:"\uD83E\uDDD8\uD83C\uDFFB\u200D\u2642\uFE0F", base:15, fixedBase:true, cap:2},
 // ─── ENDURANCE ────────────────────────────────────────────────────────
-{id:"run", name:"Course", unit:"km", xpPer:100, daily:false,weekly:true, optional:false,stat:"Endurance", icon:"\uD83C\uDFC3\uD83C\uDFFB", base:7, stat2:"Agilite", xpPer2:20, cap:2},
+{id:"run", name:"Course", unit:"km", xpPer:100, daily:false,weekly:true, optional:false,stat:"Endurance", icon:"\uD83C\uDFC3\uD83C\uDFFB", base:7, stat2:"Agilite", xpPer2:20, cap:3},
 {id:"walk", name:"Marche", unit:"km", xpPer:50, daily:false,weekly:false,optional:true, stat:"Endurance", icon:"\uD83D\uDEB6\uD83C\uDFFB\u200D\u2642\uFE0F", base:5, fixedBase:true, bonusHidden:true},
 // ─── AGILITÉ ──────────────────────────────────────────────────────────
 {id:"flex", name:"Souplesse", unit:"min", xpPer:50, daily:true, weekly:false,optional:true, stat:"Agilite", icon:"\uD83E\uDD38\uD83C\uDFFB", base:15, fixedBase:true, cap:2},
