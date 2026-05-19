@@ -279,8 +279,8 @@ const EPREUVES = [
 // 12 épreuves au total, sans notion de tier
 {id:"ep_150pull", name:"150 tractions", icon:"\u270A\uD83C\uDFFB", stat:"Force", xp:2500, days:7, unit:"rep", target:150,
 desc:"Atteindre 150 tractions en 7 jours"},
-{id:"ep_wallsit60",name:"60min de chaise", icon:"\uD83E\uDE91", stat:"Force", xp:2000, xp2:500, stat2:"Endurance", days:7, unit:"min", target:60,
-desc:"60 minutes cumul\u00e9es de chaise"},
+{id:"ep_wallsit60",name:"35min de chaise", icon:"\uD83E\uDE91", stat:"Force", xp:1500, xp2:500, stat2:"Endurance", days:7, unit:"min", target:35, dailyTrack:true, dailyTrackMin:5,
+desc:"35 minutes cumul\u00e9es de chaise sur la semaine"},
 {id:"ep_book", name:"Lire un livre complet (300+ pages)", icon:"\uD83D\uDCDA", stat:"Intelligence", xp:1000, xp2:500, stat2:"Concentration", days:7, binary:true,
 desc:"Terminer un livre de 300 pages ou plus"},
 {id:"ep_project", name:"4h de travail sur un projet personnel",icon:"\uD83E\uDDE0", stat:"Intelligence", xp:500, xp2:500, stat2:"Concentration", xp3:500, stat3:"Discipline", days:7, unit:"min", target:240,
@@ -1552,6 +1552,13 @@ return;
 newProgress = Math.min(ep.target, ep.progress + val);
 nowComplete = newProgress >= ep.target;
 }
+// Si l'épreuve est progressive avec dailyTrack, on track aussi les minutes par jour
+if(ep.dailyTrack && !ep.binary && !isStreakLike){
+const newDailyMinutes = {...dailyMinutes, [today]: todayMin + val};
+setState(s=>({...s, epreuves:s.epreuves.map(e=>e.epid===ep.epid?{...e,progress:newProgress,dailyMinutes:newDailyMinutes,completedAt:nowComplete?Date.now():null}:e)}));
+if(nowComplete){ grantEpXp(ep); }
+return;
+}
 setState(s=>({...s, epreuves:s.epreuves.map(e=>e.epid===ep.epid?{...e,progress:newProgress,completedAt:nowComplete?Date.now():null}:e)}));
 if(nowComplete){ grantEpXp(ep); }
 }
@@ -1604,6 +1611,12 @@ hasDailyMin
 ? h("span",null,vals.length+"/"+streakTarget+" jours valid\u00e9s \u00b7 aujourd'hui : "+todayMin+"/"+ep.dailyMin+" min"+(todayValidated?" \u2713":""))
 : isStreakLike
 ? h("span",null,vals.length+"/"+streakTarget+" jours valid\u00e9s"+(todayValidated?" \u2713":""))
+: ep.dailyTrack
+? (function(){
+const dailyComplete = Object.values(dailyMinutes).filter(m=>m>=(ep.dailyTrackMin||5)).length;
+const todayDone = todayMin >= (ep.dailyTrackMin||5);
+return h("span",null,ep.progress+"/"+ep.target+" "+ep.unit+" \u00b7 "+dailyComplete+" jour"+(dailyComplete>1?"s":"")+" compl\u00e9t\u00e9"+(dailyComplete>1?"s":"")+" \u00b7 aujourd'hui : "+todayMin+"/"+(ep.dailyTrackMin||5)+" min"+(todayDone?" \u2713":""));
+})()
 : h("span",null,(ep.binary?"":ep.progress+"/"+ep.target+" "+ep.unit)),
 !done&&!failed&&h("span",{style:"color:"+tierColor+";font-family:Orbitron,sans-serif"},"\u23F1 "+fmtCD(remaining)+" restants")
 ),
@@ -1632,6 +1645,11 @@ completeEp(v);
 ? h("div",{style:"display:flex;gap:8px;margin-top:8px"},
 h("button",{onClick:()=>completeEp(10),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+10 min"),
 h("button",{onClick:()=>completeEp(60),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+1 h")
+)
+: ep.id==="ep_wallsit60"
+? h("div",{style:"display:flex;gap:8px;margin-top:8px"},
+h("button",{onClick:()=>completeEp(1),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+1 min"),
+h("button",{onClick:()=>completeEp(5),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+5 min")
 )
 : h("div",{style:"display:flex;gap:8px;margin-top:8px"},
 h("button",{onClick:()=>completeEp(1),style:"flex:1;padding:10px;border-radius:8px;border:1px solid "+tierColor+"55;background:"+tierColor+"11;color:"+tierColor+";font-family:Orbitron,sans-serif;font-size:11px;cursor:pointer"},"+1 "+ep.unit),
